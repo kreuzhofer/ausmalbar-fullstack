@@ -1,0 +1,104 @@
+{% extends "admin/delete_confirmation.html" %}
+
+{% block content %}
+<div class="delete-confirmation">
+    <div class="alert alert-warning">
+        <h4>Warning!</h4>
+        <p>You are about to delete the coloring page <strong>{{ object.title }}</strong>. This will permanently remove the page and all associated files (image and thumbnail). This action cannot be undone.</p>
+    </div>
+
+    <div class="delete-summary">
+        <h5>Details:</h5>
+        <ul>
+            <li><strong>Title:</strong> {{ object.title }}</li>
+            <li><strong>Created:</strong> {{ object.created_at|date:"F j, Y H:i" }}</li>
+            {% if object.thumbnail %}
+            <li>
+                <strong>Preview:</strong><br>
+                <img src="{{ object.thumbnail.url }}" style="max-width: 200px; max-height: 200px; margin-top: 10px; border: 1px solid #ddd;">
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <input type="hidden" name="post" value="yes">
+            <input type="hidden" name="confirm" value="yes">
+            <div class="form-actions">
+                <input type="submit" value="Yes, I'm sure" class="btn btn-danger">
+                <a href="{% url 'admin:coloring_pages_coloringpage_changelist' %}" class="button cancel-link">No, take me back</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+.delete-confirmation {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+.delete-summary {
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+.delete-summary ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+.delete-summary li {
+    margin-bottom: 10px;
+}
+.form-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+    text-align: right;
+}
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 13px;
+}
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+.cancel-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-left: 10px;
+    font-size: 13px;
+}
+.cancel-link:hover {
+    background: #e2e6ea;
+    text-decoration: none;
+}
+</style>
+{% endblock %}

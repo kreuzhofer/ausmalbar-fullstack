@@ -1,0 +1,150 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .submit-row {
+        padding: 12px 14px;
+        margin: 0 0 20px;
+        background: #f8f8f8;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        text-align: right;
+        overflow: hidden;
+    }
+    .submit-row a.button {
+        height: 35px;
+        margin: 0 0 0 5px;
+        padding: 0 15px;
+        background: #999;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 35px;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .submit-row a.button:hover {
+        background: #666;
+    }
+    .submit-row input[type="submit"] {
+        margin: 0;
+        padding: 8px 15px;
+        background: #417690;
+        border: none;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+    }
+    .submit-row input[type="submit"]:hover {
+        background: #205067;
+    }
+    .form-row {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    .form-row:last-child {
+        border-bottom: none;
+    }
+    .field-box {
+        float: left;
+        width: 100%;
+        padding: 0 10px 0 0;
+        margin-bottom: 10px;
+    }
+    .field-box label {
+        display: block;
+        padding: 4px 10px 0 0;
+        float: left;
+        width: 160px;
+        word-wrap: break-word;
+        font-weight: bold;
+    }
+    .field-box input[type="text"],
+    .field-box textarea,
+    .field-box select {
+        width: 60%;
+        padding: 5px 6px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        font-size: 13px;
+    }
+    .field-box textarea {
+        height: 100px;
+    }
+    .help {
+        color: #999;
+        font-size: 11px;
+        margin: 0 0 0 160px;
+        padding: 3px 0 0 0;
+        clear: both;
+    }
+    .errorlist {
+        color: #ba2121;
+        margin: 0 0 0 160px;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+    }
+    .errorlist li {
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='coloring_pages' %}">Coloring pages</a>
+    &rsaquo; <a href="{% url 'admin:coloring_pages_coloringpage_changelist' %}">Coloring pages</a>
+    &rsaquo; Generate new coloring page
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form action="{% url 'admin:coloring_pages_coloringpage_generate' %}" method="post" id="coloringpage_form" novalidate>
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <p class="errornote">
+                {% if errors|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+            </p>
+            {{ form.non_field_errors }}
+        {% endif %}
+        
+        <div class="module aligned">
+            <h2>Generate New Coloring Page</h2>
+            
+            {% for field in form %}
+                <div class="form-row field-{{ field.name }}">
+                    <div class="field-box">
+                        {{ field.errors }}
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="help">{{ field.help_text|safe }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="submit-row">
+            <a href="{% url 'admin:coloring_pages_coloringpage_changelist' %}" class="button">{% trans 'Cancel' %}</a>
+            <input type="submit" value="{% trans 'Generate' %}" class="default" name="_save">
+        </div>
+    </form>
+</div>
+{% endblock %}

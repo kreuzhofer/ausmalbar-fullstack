@@ -1,0 +1,16 @@
+# robots.txt for Ausmalbar
+User-agent: *
+Allow: /
+
+# Disallow admin and sensitive areas
+Disallow: /admin/
+Disallow: /media/admin/
+Disallow: /static/admin/
+Disallow: /accounts/
+Disallow: /api/
+
+# Crawl-delay for search engines (1 request per second)
+Crawl-delay: 1
+
+# Sitemap location (use your actual domain)
+Sitemap: https://ausmalbar.com/sitemap.xml
