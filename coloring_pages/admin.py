@@ -12,7 +12,7 @@ from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from openai import OpenAI
 from .models import ColoringPage
 from .forms import ColoringPageForm
-from .views import generate_coloring_page
+from .views import generate_coloring_page, confirm_coloring_page
 
 class ColoringPageAddForm(forms.ModelForm):
     class Meta:
@@ -128,9 +128,21 @@ class ColoringPageAdmin(admin.ModelAdmin):
                 self.admin_site.admin_view(generate_coloring_page),
                 name='coloring_pages_coloringpage_generate',
             ),
+            path(
+                'confirm/',
+                self.admin_site.admin_view(confirm_coloring_page),
+                name='confirm_coloring_page',
+            ),
         ]
         return custom_urls + urls
     
+    def response_add(self, request, obj, post_url_continue=None):
+        """Redirect to the change list view after adding a new object."""
+        response = super().response_add(request, obj, post_url_continue)
+        if '_addanother' in request.POST:
+            return response
+        return redirect('admin:coloring_pages_coloringpage_changelist')
+        
     def add_view(self, request, form_url='', extra_context=None):
         # Redirect to our custom view for adding new coloring pages
         return redirect('admin:coloring_pages_coloringpage_generate')

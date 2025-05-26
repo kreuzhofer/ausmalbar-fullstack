@@ -1,0 +1,137 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .confirmation-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .preview-section {
+            margin-bottom: 30px;
+        }
+        .preview-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #eee;
+            margin: 10px 0;
+        }
+        .preview-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            border: 1px solid #eee;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        
+        .preview-thumbnail {
+            max-width: 100%;
+            max-height: 400px;
+            height: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .no-preview {
+            color: #999;
+            font-style: italic;
+        }
+        .action-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .action-buttons button, .action-buttons a {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .btn-confirm {
+            background: #5cb85c;
+            color: white;
+        }
+        .btn-regenerate {
+            background: #f0ad4e;
+            color: white;
+        }
+        .btn-reject {
+            background: #d9534f;
+            color: white;
+        }
+        .preview-field {
+            margin-bottom: 15px;
+        }
+        .preview-field label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .preview-field .value {
+            padding: 8px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <h1>{% trans 'Confirm Coloring Page Generation' %}</h1>
+    
+    <div class="preview-section">
+        <h2>{% trans 'Preview' %}</h2>
+        
+        <div class="preview-field">
+            <label>{% trans 'Title' %}:</label>
+            <div class="value">{{ page_data.title }}</div>
+        </div>
+        
+        <div class="preview-field">
+            <label>{% trans 'Description' %}:</label>
+            <div class="value">{{ page_data.description }}</div>
+        </div>
+        
+        <div class="preview-field">
+            <label>{% trans 'Prompt' %}:</label>
+            <div class="value">{{ page_data.prompt }}</div>
+        </div>
+        
+        <div class="preview-field">
+            <label>{% trans 'Preview' %}:</label>
+            <div class="preview-container">
+                {% if page_data.thumb_data %}
+                    <img src="{{ page_data.thumb_data }}" class="preview-thumbnail" alt="Preview">
+                {% else %}
+                    <div class="no-preview">No preview available</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <form method="post" id="confirmation_form">
+        {% csrf_token %}
+        <div class="action-buttons">
+            <button type="submit" name="action" value="reject" class="btn-reject">
+                {% trans 'Reject & Discard' %}
+            </button>
+            <button type="submit" name="action" value="regenerate" class="btn-regenerate">
+                {% trans 'Regenerate' %}
+            </button>
+            <button type="submit" name="action" value="confirm" class="btn-confirm">
+                {% trans 'Confirm & Save' %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

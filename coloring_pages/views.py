@@ -1,20 +1,42 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.core.paginator import Paginator
-from django.http import HttpResponse, Http404, HttpResponseServerError
-from django.conf import settings
-from django.template import loader
-from django.core.files.base import ContentFile
-from django.contrib import messages
-from django.urls import reverse
-from .models import ColoringPage
-from .forms import ColoringPageForm, GenerateColoringPageForm
-import openai
-import os
-import io
-import requests
-from PIL import Image
-import uuid
 import base64
+import io
+import os
+import tempfile
+import uuid
+from io import BytesIO
+
+import requests
+from django.conf import settings
+from django.contrib import messages
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.paginator import Paginator
+from django.http import Http404, HttpResponse, HttpResponseServerError
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template import loader
+from django.urls import reverse
+from openai import OpenAI
+from PIL import Image
+
+from .forms import ColoringPageForm, GenerateColoringPageForm
+from .models import ColoringPage
+
+
+def get_coloring_page_prompt(prompt: str) -> str:
+    """Generate a clean, simple prompt for creating coloring page images.
+    
+    Args:
+        prompt: The subject of the coloring page
+        
+    Returns:
+        str: A clean prompt for the image generation
+    """
+    return (
+        f"Black line drawing of {prompt}. "
+        "Black outlines on white background. "
+        "No color, no shading, no text, no background. "
+        "Simple and clear outlines only."
+    )
 
 def home(request):
     latest_pages = ColoringPage.objects.all()[:3]
@@ -76,7 +98,7 @@ def generate_coloring_page(request):
                 })
             
             try:
-                client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
                 
                 # Generate title and description using GPT-4o-mini
                 response = client.chat.completions.create(
@@ -172,18 +194,20 @@ def generate_coloring_page(request):
                     print(f"Error parsing AI response: {e}")
                     # Use the default values if parsing fails
                 
-                # Generate image using DALL-E
-                image_response = client.images.generate(
+                # Generate the image using DALL·E 3 with explicit instructions
+                prompt_text = get_coloring_page_prompt(prompt)
+                
+                response = client.images.generate(
                     model="dall-e-3",
-                    prompt=f"Create a black and white line art coloring page of: {prompt}. The image should be high contrast with clear outlines and no shading. Make it suitable for children to color.",
-                    n=1,
+                    prompt=prompt_text,
                     size="1024x1024",
                     quality="standard",
+                    n=1,
                     response_format="b64_json"
                 )
                 
                 # Get the base64 image data
-                image_data = image_response.data[0].b64_json
+                image_data = response.data[0].b64_json
                 image_bytes = base64.b64decode(image_data)
                 
                 # Create a new ColoringPage instance
@@ -193,9 +217,14 @@ def generate_coloring_page(request):
                     prompt=prompt
                 )
                 
-                # Save the image
+                # Save images to temporary files
+                temp_dir = tempfile.mkdtemp()
                 image_name = f"coloring_{uuid.uuid4()}.png"
-                page.image.save(image_name, ContentFile(image_bytes))
+                temp_image_path = os.path.join(temp_dir, image_name)
+                
+                # Save the main image
+                with open(temp_image_path, 'wb') as f:
+                    f.write(image_bytes)
                 
                 # Generate thumbnail
                 from io import BytesIO
@@ -205,19 +234,23 @@ def generate_coloring_page(request):
                 img = PILImage.open(BytesIO(image_bytes))
                 img.thumbnail((256, 256), PILImage.LANCZOS)
                 
-                # Save thumbnail to BytesIO
-                thumb_io = BytesIO()
-                img.save(thumb_io, format='PNG')
-                
-                # Save thumbnail to model
+                # Save thumbnail to temp file
                 thumb_name = f"thumb_{uuid.uuid4()}.png"
-                page.thumbnail.save(thumb_name, ContentFile(thumb_io.getvalue()))
+                temp_thumb_path = os.path.join(temp_dir, thumb_name)
+                img.save(temp_thumb_path, format='PNG')
                 
-                # Save the page
-                page.save()
+                # Store data in session for confirmation
+                request.session['pending_page'] = {
+                    'title': title,
+                    'description': description,
+                    'prompt': prompt,
+                    'image_path': temp_image_path,
+                    'thumb_path': temp_thumb_path,
+                    'temp_dir': temp_dir
+                }
                 
-                messages.success(request, 'Coloring page generated successfully!')
-                return redirect('admin:coloring_pages_coloringpage_changelist')
+                # Redirect to confirmation page
+                return redirect('admin:confirm_coloring_page')
             
             except Exception as e:
                 import traceback
@@ -238,4 +271,150 @@ def generate_coloring_page(request):
         'form': form,
         'title': 'Generate New Coloring Page',
         'opts': ColoringPage._meta,
+    })
+
+
+def confirm_coloring_page(request):
+    """Handle the confirmation page for generated coloring pages."""
+    if 'pending_page' not in request.session:
+        messages.error(request, 'No pending coloring page to confirm.')
+        return redirect('admin:coloring_pages_coloringpage_changelist')
+    
+    pending_page = request.session['pending_page']
+    
+    # Read the thumbnail and encode it as base64
+    if os.path.exists(pending_page.get('thumb_path', '')):
+        with open(pending_page['thumb_path'], 'rb') as f:
+            pending_page['thumb_data'] = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'confirm':
+            # Save the page to the database
+            try:
+                # Create a new ColoringPage instance
+                page = ColoringPage(
+                    title=pending_page['title'],
+                    description=pending_page['description'],
+                    prompt=pending_page['prompt']
+                )
+                
+                # Save the main image
+                with open(pending_page['image_path'], 'rb') as f:
+                    image_content = ContentFile(f.read())
+                    page.image.save(os.path.basename(pending_page['image_path']), image_content)
+                
+                # Save the thumbnail
+                with open(pending_page['thumb_path'], 'rb') as f:
+                    thumb_content = ContentFile(f.read())
+                    page.thumbnail.save(os.path.basename(pending_page['thumb_path']), thumb_content)
+                
+                # Save the page
+                page.save()
+                
+                # Clean up temp files
+                if os.path.exists(pending_page['temp_dir']):
+                    import shutil
+                    shutil.rmtree(pending_page['temp_dir'])
+                
+                # Clear the session
+                del request.session['pending_page']
+                
+                messages.success(request, 'Coloring page saved successfully!')
+                return redirect('admin:coloring_pages_coloringpage_changelist')
+                
+            except Exception as e:
+                messages.error(request, f'Error saving coloring page: {str(e)}')
+                return redirect('admin:coloring_pages_coloringpage_changelist')
+        
+        elif action == 'regenerate':
+            # Keep the prompt and regenerate the content
+            prompt = pending_page['prompt']
+            
+            # Clean up old temp files
+            if os.path.exists(pending_page['temp_dir']):
+                import shutil
+                shutil.rmtree(pending_page['temp_dir'], ignore_errors=True)
+            
+            # Initialize temp_dir at the beginning of the block
+            temp_dir = None
+            try:
+                # Generate new image using the same prompt
+                client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+                
+                # Generate the image using DALL·E 3 with explicit instructions
+                prompt_text = get_coloring_page_prompt(prompt)
+                
+                response = client.images.generate(
+                    model="dall-e-3",
+                    prompt=prompt_text,
+                    size="1024x1024",
+                    quality="standard",
+                    n=1,
+                )
+                
+                # Download the generated image
+                image_url = response.data[0].url
+                image_response = requests.get(image_url)
+                image_response.raise_for_status()
+                image_bytes = image_response.content
+                
+                # Create new temp directory
+                temp_dir = tempfile.mkdtemp()
+                image_name = f"coloring_{uuid.uuid4()}.png"
+                temp_image_path = os.path.join(temp_dir, image_name)
+                
+                # Save the main image
+                with open(temp_image_path, 'wb') as f:
+                    f.write(image_bytes)
+                
+                # Generate thumbnail
+                img = Image.open(BytesIO(image_bytes))
+                img.thumbnail((256, 256), Image.LANCZOS)
+                
+                # Save thumbnail to temp file
+                thumb_name = f"thumb_{uuid.uuid4()}.png"
+                temp_thumb_path = os.path.join(temp_dir, thumb_name)
+                img.save(temp_thumb_path, format='PNG')
+                
+                # Update the pending page data with new files
+                request.session['pending_page'] = {
+                    'title': pending_page.get('title', 'New Coloring Page'),
+                    'description': pending_page.get('description', ''),
+                    'prompt': prompt,
+                    'image_path': temp_image_path,
+                    'thumb_path': temp_thumb_path,
+                    'temp_dir': temp_dir
+                }
+                
+                # Redirect back to the confirmation page with the new image
+                return redirect('admin:confirm_coloring_page')
+                
+            except Exception as e:
+                # If regeneration fails, clean up and show error
+                if temp_dir and os.path.exists(temp_dir):
+                    import shutil
+                    shutil.rmtree(temp_dir, ignore_errors=True)
+                
+                messages.error(request, f'Error regenerating image: {str(e)}')
+                return redirect('admin:coloring_pages_coloringpage_changelist')
+        
+        elif action == 'reject':
+            # Clean up temp files
+            if os.path.exists(pending_page['temp_dir']):
+                import shutil
+                shutil.rmtree(pending_page['temp_dir'])
+            
+            # Clear the session
+            del request.session['pending_page']
+            
+            messages.info(request, 'Coloring page generation cancelled.')
+            return redirect('admin:coloring_pages_coloringpage_changelist')
+    
+    # For GET requests, show the confirmation page
+    return render(request, 'admin/coloring_pages/coloringpage/confirm_generation.html', {
+        'title': 'Confirm Coloring Page Generation',
+        'opts': ColoringPage._meta,
+        'page_data': pending_page,
     })
