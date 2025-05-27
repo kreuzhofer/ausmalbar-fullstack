@@ -28,13 +28,15 @@
         {% for page in latest_pages %}
         <div class="col">
             <div class="card h-100">
-                {% if page.thumbnail %}
-                <img src="{{ page.thumbnail.url }}" class="card-img-top" alt="{{ page.title }}">
-                {% else %}
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                    <i class="fas fa-image fa-5x text-muted"></i>
-                </div>
-                {% endif %}
+                <a href="{% url 'page_detail' page.id %}" class="text-decoration-none">
+                    {% if page.thumbnail %}
+                    <img src="{{ page.thumbnail.url }}" class="card-img-top" alt="{{ page.title_en }}">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="fas fa-image fa-5x text-muted"></i>
+                    </div>
+                    {% endif %}
+                </a>
                 <div class="card-body">
                     <h5 class="card-title">{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}</h5>
                     <p class="card-text">{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de|truncatewords:15 }}{% else %}{{ page.description_en|truncatewords:15 }}{% endif %}</p>
