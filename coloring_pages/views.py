@@ -15,28 +15,16 @@ from django.http import Http404, HttpResponse, HttpResponseServerError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template import loader
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from openai import OpenAI
 from PIL import Image
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
 from .models import ColoringPage
+from .utils import get_coloring_page_prompt
 
 
-def get_coloring_page_prompt(prompt: str) -> str:
-    """Generate a clean, simple prompt for creating coloring page images.
-    
-    Args:
-        prompt: The subject of the coloring page
-        
-    Returns:
-        str: A clean prompt for the image generation
-    """
-    return (
-        f"Black line drawing of {prompt}. "
-        "Black outlines on white background. "
-        "No color, no shading, no text, no background. "
-        "Simple and clear outlines only."
-    )
+# Moved to utils.py
 
 def home(request):
     latest_pages = ColoringPage.objects.all()[:3]
@@ -90,10 +78,10 @@ def generate_coloring_page(request):
             
             # Ensure the prompt is not empty
             if not prompt:
-                messages.error(request, 'Please enter a prompt')
+                messages.error(request, _('Please enter a prompt'))
                 return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
                     'form': form,
-                    'title': 'Generate New Coloring Page',
+                    'title': _('Generate New Coloring Page'),
                     'opts': ColoringPage._meta,
                 })
             
@@ -256,10 +244,10 @@ def generate_coloring_page(request):
                 import traceback
                 error_message = f"Error generating coloring page: {str(e)}\n\n{traceback.format_exc()}"
                 print(error_message)  # Log the full error to console
-                messages.error(request, f'Error generating coloring page: {str(e)}')
+                messages.error(request, _('Error generating coloring page: %(error)s') % {'error': str(e)})
                 return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
                     'form': form,
-                    'title': 'Generate New Coloring Page',
+                    'title': _('Generate New Coloring Page'),
                     'opts': ColoringPage._meta,
                 })
     else:
@@ -269,7 +257,7 @@ def generate_coloring_page(request):
     # Use our custom template that only shows the prompt field
     return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
         'form': form,
-        'title': 'Generate New Coloring Page',
+        'title': _('Generate New Coloring Page'),
         'opts': ColoringPage._meta,
     })
 
@@ -277,7 +265,7 @@ def generate_coloring_page(request):
 def confirm_coloring_page(request):
     """Handle the confirmation page for generated coloring pages."""
     if 'pending_page' not in request.session:
-        messages.error(request, 'No pending coloring page to confirm.')
+        messages.error(request, _('No pending coloring page to confirm.'))
         return redirect('admin:coloring_pages_coloringpage_changelist')
     
     pending_page = request.session['pending_page']
@@ -321,11 +309,11 @@ def confirm_coloring_page(request):
                 # Clear the session
                 del request.session['pending_page']
                 
-                messages.success(request, 'Coloring page saved successfully!')
+                messages.success(request, _('Coloring page saved successfully!'))
                 return redirect('admin:coloring_pages_coloringpage_changelist')
                 
             except Exception as e:
-                messages.error(request, f'Error saving coloring page: {str(e)}')
+                messages.error(request, _('Failed to save the coloring page. Please try again.'))
                 return redirect('admin:coloring_pages_coloringpage_changelist')
         
         elif action == 'regenerate':
@@ -380,7 +368,7 @@ def confirm_coloring_page(request):
                 
                 # Update the pending page data with new files
                 request.session['pending_page'] = {
-                    'title': pending_page.get('title', 'New Coloring Page'),
+                    'title': pending_page.get('title', _('New Coloring Page')),
                     'description': pending_page.get('description', ''),
                     'prompt': prompt,
                     'image_path': temp_image_path,
@@ -397,7 +385,7 @@ def confirm_coloring_page(request):
                     import shutil
                     shutil.rmtree(temp_dir, ignore_errors=True)
                 
-                messages.error(request, f'Error regenerating image: {str(e)}')
+                messages.error(request, _('Error generating image: %(error)s') % {'error': str(e)})
                 return redirect('admin:coloring_pages_coloringpage_changelist')
         
         elif action == 'reject':

@@ -1,0 +1,93 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-27 05:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+msgid "Confirm Coloring Page Generation"
+msgstr ""
+
+msgid "Preview"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Prompt"
+msgstr ""
+
+msgid "Reject & Discard"
+msgstr ""
+
+msgid "Regenerate"
+msgstr ""
+
+msgid "Confirm & Save"
+msgstr ""
+
+msgid "Home"
+msgstr ""
+
+msgid "Please correct the error below."
+msgstr ""
+
+msgid "Please correct the errors below."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Generate"
+msgstr ""
+
+msgid "Generate New Coloring Page"
+msgstr ""
+
+msgid "Describe the coloring page you want to create:"
+msgstr ""
+
+msgid "Generate Coloring Page"
+msgstr ""
+
+#, python-format
+msgid "Black line drawing of %(prompt)s. Black outlines on white background. No color, no shading, no text, no background. Simple and clear outlines only."
+msgstr ""
+
+msgid "Please enter a prompt"
+msgstr ""
+
+#, python-format
+msgid "Error generating coloring page: %(error)s"
+msgstr ""
+
+msgid "No pending coloring page to confirm."
+msgstr ""
+
+msgid "Coloring page saved successfully!"
+msgstr ""
+
+msgid "Failed to save the coloring page. Please try again."
+msgstr ""
+
+msgid "New Coloring Page"
+msgstr ""
+
+#, python-format
+msgid "Error generating image: %(error)s"
+msgstr ""

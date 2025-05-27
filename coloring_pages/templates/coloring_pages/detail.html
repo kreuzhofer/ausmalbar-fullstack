@@ -1,6 +1,7 @@
 {% extends 'coloring_pages/base.html' %}
+{% load i18n %}
 
-{% block title %}{{ page.title }} - Ausmalbar{% endblock %}
+{% block title %}{{ page.title }} - {% trans "Ausmalbar" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -43,13 +44,13 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
-        <nav aria-label="breadcrumb" class="mb-4">
+        <nav aria-label="{% trans 'breadcrumb' %}" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'search' %}">Coloring Pages</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'search' %}">{% trans "Coloring Pages" %}</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
             </ol>
         </nav>
@@ -60,19 +61,19 @@
             {% else %}
                 <div class="text-center p-5 bg-light">
                     <i class="fas fa-image fa-5x text-muted mb-3"></i>
-                    <p class="text-muted">No image available</p>
+                    <p class="text-muted">{% trans "No image available" %}</p>
                 </div>
             {% endif %}
             
             <div class="action-buttons justify-content-center">
                 <a href="{% url 'download_image' page.id %}" class="btn btn-primary btn-lg btn-download">
-                    <i class="fas fa-download me-2"></i> Download
+                    <i class="fas fa-download me-2"></i> {% trans "Download" %}
                 </a>
                 <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
-                    <i class="fas fa-print me-2"></i> Print
+                    <i class="fas fa-print me-2"></i> {% trans "Print" %}
                 </button>
                 <a href="#" class="btn btn-outline-primary btn-lg" id="shareButton">
-                    <i class="fas fa-share-alt me-2"></i> Share
+                    <i class="fas fa-share-alt me-2"></i> {% trans "Share" %}
                 </a>
             </div>
         </div>
@@ -83,7 +84,7 @@
                 <p class="lead">{{ page.description }}</p>
             {% endif %}
             <div class="text-muted">
-                <small>Added on {{ page.created_at|date:"F j, Y" }}</small>
+                <small>{% trans "Added on" %} {{ page.created_at|date:"F j, Y" }}</small>
             </div>
         </div>
         
@@ -105,13 +106,13 @@
                 if (navigator.share) {
                     navigator.share({
                         title: '{{ page.title }}',
-                        text: 'Check out this coloring page from Ausmalbar!',
+                        text: '{% trans "Check out this coloring page from Ausmalbar!" %}',
                         url: window.location.href,
                     })
                     .catch(error => console.log('Error sharing:', error));
                 } else {
                     // Fallback for browsers that don't support Web Share API
-                    const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent('Check out this coloring page: ' + '{{ page.title }}')}`;
+                    const shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent('{% trans "Check out this coloring page: " %}' + '{{ page.title }}')}`;
                     window.open(shareUrl, '_blank');
                 }
             });

@@ -5,12 +5,19 @@ from django.conf.urls.static import static
 from django.conf.urls import handler404, handler500
 from django.views.generic import TemplateView
 from django.contrib.sitemaps.views import sitemap
+from django.conf.urls.i18n import i18n_patterns
 
 from coloring_pages.sitemaps import sitemaps
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
+# Internationalized URL patterns
+urlpatterns = i18n_patterns(
     path('', include('coloring_pages.urls')),
+    prefix_default_language=True
+)
+
+# Non-internationalized URL patterns
+urlpatterns += [
+    path('admin/', admin.site.urls),
     # Add robots.txt handler
     path('robots.txt', TemplateView.as_view(
         template_name='robots.txt', 
@@ -18,6 +25,8 @@ urlpatterns = [
     )),
     # Sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    # Language switcher
+    path('i18n/', include('django.conf.urls.i18n')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Error handlers

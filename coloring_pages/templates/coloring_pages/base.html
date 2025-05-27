@@ -1,130 +1,91 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Ausmalbar - Free Coloring Pages for Kids{% endblock %}</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            padding-top: 3.5rem;
-            background-color: #f8f9fa;
-        }
-        .navbar-brand {
-            font-weight: bold;
-            color: #6f42c1 !important;
-        }
-        .card {
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        .card-img-top {
-            height: 200px;
-            object-fit: cover;
-        }
-        .btn-primary {
-            background-color: #6f42c1;
-            border-color: #6f42c1;
-        }
-        .btn-outline-primary {
-            color: #6f42c1;
-            border-color: #6f42c1;
-        }
-        .btn-outline-primary:hover {
-            background-color: #6f42c1;
-            border-color: #6f42c1;
-        }
-        footer {
-            background-color: #f8f9fa;
-            padding: 2rem 0;
-            margin-top: 3rem;
-            border-top: 1px solid #e9ecef;
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
+{% extends "base.html" %}
+{% load i18n static i18n_switcher %}
+
+{% block content %}
     <!-- Navigation -->
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-        <div class="container">
+        <div class="container position-relative">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="fas fa-palette me-2"></i>Ausmalbar
+                <i class="fas fa-palette me-2"></i>{% trans "Ausmalbar" %}
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            
+            <!-- Language Switcher -->
+            <div class="language-switcher">
+                {% get_current_language as CURRENT_LANGUAGE %}
+                {% get_available_languages as LANGUAGES %}
+                {% for lang_code, lang_name in LANGUAGES %}
+                    <a href="{% change_lang lang_code %}" class="{% if lang_code == CURRENT_LANGUAGE %}active{% endif %}" title="{{ lang_name }}">
+                        {{ lang_code|upper }}
+                    </a>
+                {% endfor %}
+            </div>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarCollapse">
-                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link" href="{% url 'home' %}">{% trans "Home" %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'search' %}">Browse</a>
+                        <a class="nav-link" href="{% url 'search' %}">{% trans "Search" %}</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'test_i18n' %}">{% trans "Test i18n" %}</a>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'admin:index' %}">{% trans "Admin" %}</a>
+                    </li>
+                    {% endif %}
                 </ul>
-                <form class="d-flex" action="{% url 'search' %}" method="get">
-                    <input class="form-control me-2" type="search" name="q" placeholder="Search coloring pages..." aria-label="Search">
-                    <button class="btn btn-outline-light" type="submit">Search</button>
+                <form class="d-flex ms-3" action="{% url 'search' %}" method="get">
+                    <input class="form-control me-2" type="search" name="q" placeholder="{% trans 'Search coloring pages...' %}" aria-label="Search">
+                    <button class="btn btn-outline-light" type="submit">{% trans "Search" %}</button>
                 </form>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="container">
+    <main class="container mt-5">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
                 </div>
             {% endfor %}
         {% endif %}
 
-        {% block content %}
+        {% block page_content %}
         {% endblock %}
     </main>
 
-    <!-- Footer -->
     <footer class="mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5>About Ausmalbar</h5>
-                    <p>Free printable coloring pages for kids. Download, print, and start coloring!</p>
+                    <h5>{% trans "About Ausmalbar" %}</h5>
+                    <p>{% trans "Free printable coloring pages for kids. Download, print, and start coloring!" %}</p>
                 </div>
                 <div class="col-md-3">
-                    <h5>Links</h5>
+                    <h5>{% trans "Legal" %}</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{% url 'home' %}">Home</a></li>
-                        <li><a href="{% url 'search' %}">Browse</a></li>
-                        <li><a href="/admin/">Admin</a></li>
+                        <li><a href="/privacy/">{% trans "Privacy Policy" %}</a></li>
+                        <li><a href="/terms/">{% trans "Terms of Service" %}</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>Legal</h5>
+                    <h5>{% trans "Connect" %}</h5>
                     <ul class="list-unstyled">
-                        <li><a href="/privacy/">Privacy Policy</a></li>
-                        <li><a href="/terms/">Terms of Service</a></li>
+                        <li><a href="https://github.com/kreuzhofer/ausmalbar-fullstack" target="_blank"><i class="fab fa-github me-2"></i>GitHub</a></li>
                     </ul>
                 </div>
             </div>
-            <hr>
-            <div class="text-center">
-                <p class="mb-0">&copy; {% now "Y" %} Ausmalbar. All rights reserved.</p>
+            <div class="text-center mt-3">
+                <p class="mb-0">&copy; {% now "Y" %} {% trans "Ausmalbar. All rights reserved." %}</p>
             </div>
         </div>
     </footer>
-
-    <!-- Bootstrap JS and dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_js %}{% endblock %}
-</body>
-</html>
+{% endblock %}

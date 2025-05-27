@@ -1,15 +1,28 @@
 {% extends 'coloring_pages/base.html' %}
+{% load i18n %}
 
-{% block title %}{% if query %}{{ query|title }} - {% endif %}Search Results - Ausmalbar{% endblock %}
+{% block title %}{% if query %}{{ query|title }} - {% endif %}{% trans "Search Results - Ausmalbar" %}{% endblock %}
 
-{% block content %}
+{% block page_content %}
 <div class="py-4">
-    <h1 class="mb-4">Search Results{% if query %} for "{{ query }}"{% endif %}</h1>
+    <h1 class="mb-4">
+        {% if query %}
+            {% blocktrans with query=query %}Search Results for "{{ query }}"{% endblocktrans %}
+        {% else %}
+            {% trans "Search Results" %}
+        {% endif %}
+    </h1>
     
     {% if query %}
-        <p class="text-muted mb-4">{{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }} found</p>
+        <p class="text-muted mb-4">
+            {% blocktrans count counter=page_obj.paginator.count %}
+                {{ counter }} result found
+            {% plural %}
+                {{ counter }} results found
+            {% endblocktrans %}
+        </p>
     {% else %}
-        <p class="text-muted mb-4">Browse our collection of coloring pages</p>
+        <p class="text-muted mb-4">{% trans "Browse our collection of coloring pages" %}</p>
     {% endif %}
     
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
@@ -29,9 +42,9 @@
                 </div>
                 <div class="card-footer bg-transparent">
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="{% url 'page_detail' page.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                        <a href="{% url 'page_detail' page.id %}" class="btn btn-sm btn-outline-primary">{% trans "View" %}</a>
                         <a href="{% url 'download_image' page.id %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-download me-1"></i> Download
+                            <i class="fas fa-download me-1"></i> {% trans "Download" %}
                         </a>
                     </div>
                 </div>
@@ -40,64 +53,81 @@
         {% empty %}
         <div class="col-12">
             <div class="alert alert-info">
-                No coloring pages found{% if query %} for "{{ query }}"{% endif %}. Try a different search term.
+                {% if query %}
+                    {% blocktrans %}No coloring pages found for "{{ query }}". Try a different search term.{% endblocktrans %}
+                {% else %}
+                    {% trans "No coloring pages found. Try a different search term." %}
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     
     {% if page_obj.paginator.num_pages > 1 %}
-    <nav aria-label="Page navigation" class="mt-4">
+    <nav aria-label="{% trans 'Page navigation' %}" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="First">
+                    <a class="page-link" href="?page=1{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'First' %}">
                         <span aria-hidden="true">&laquo;&laquo;</span>
+                        <span class="visually-hidden">{% trans "First" %}</span>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="Previous">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Previous' %}">
                         <span aria-hidden="true">&laquo;</span>
+                        <span class="visually-hidden">{% trans "Previous" %}</span>
                     </a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
-                    <span class="page-link">&laquo;&laquo;</span>
+                    <span class="page-link" aria-hidden="true">&laquo;&laquo;</span>
+                    <span class="visually-hidden">{% trans "First" %}</span>
                 </li>
                 <li class="page-item disabled">
-                    <span class="page-link">&laquo;</span>
+                    <span class="page-link" aria-hidden="true">&laquo;</span>
+                    <span class="visually-hidden">{% trans "Previous" %}</span>
                 </li>
             {% endif %}
             
             {% for num in page_obj.paginator.page_range %}
                 {% if page_obj.number == num %}
                     <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
+                        <span class="page-link">
+                            {{ num }}
+                            <span class="visually-hidden">{% trans "(current)" %}</span>
+                        </span>
                     </li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}">{{ num }}</a>
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+                            {{ num }}
+                        </a>
                     </li>
                 {% endif %}
             {% endfor %}
             
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="Next">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Next' %}">
                         <span aria-hidden="true">&raquo;</span>
+                        <span class="visually-hidden">{% trans "Next" %}</span>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="Last">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Last' %}">
                         <span aria-hidden="true">&raquo;&raquo;</span>
+                        <span class="visually-hidden">{% trans "Last" %}</span>
                     </a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
-                    <span class="page-link">&raquo;</span>
+                    <span class="page-link" aria-hidden="true">&raquo;</span>
+                    <span class="visually-hidden">{% trans "Next" %}</span>
                 </li>
                 <li class="page-item disabled">
-                    <span class="page-link">&raquo;&raquo;</span>
+                    <span class="page-link" aria-hidden="true">&raquo;&raquo;</span>
+                    <span class="visually-hidden">{% trans "Last" %}</span>
                 </li>
             {% endif %}
         </ul>
