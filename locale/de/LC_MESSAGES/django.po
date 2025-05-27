@@ -100,7 +100,7 @@ msgid "Free Coloring Pages for Kids - Ausmalbar"
 msgstr "Kostenlose Malvorlagen für Kinder - Ausmalbar"
 
 msgid "Welcome to Ausmalbar!"
-msgstr "Willkommen bei Ausmalbar!"
+msgstr "Willkommen bei Ausmalbar.de!"
 
 msgid "Discover and print free coloring pages for kids of all ages."
 msgstr "Entdecken und drucken Sie kostenlose Malvorlagen für Kinder jeden Alters."
