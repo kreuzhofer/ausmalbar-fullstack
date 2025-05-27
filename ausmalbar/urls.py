@@ -18,9 +18,13 @@ urlpatterns = i18n_patterns(
 # Non-internationalized URL patterns
 urlpatterns += [
     path('admin/', admin.site.urls),
-    # Add robots.txt handler
+    # Add robots.txt and ads.txt handlers
     path('robots.txt', TemplateView.as_view(
         template_name='robots.txt', 
+        content_type='text/plain'
+    )),
+    path('ads.txt', TemplateView.as_view(
+        template_name='ads.txt',
         content_type='text/plain'
     )),
     # Sitemap
