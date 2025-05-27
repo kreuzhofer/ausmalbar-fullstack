@@ -38,11 +38,11 @@ def search(request):
     # Search in both English and German fields
     if query:
         pages = ColoringPage.objects.filter(
-            models.Q(title_en__icontains=query) |
-            models.Q(description_en__icontains=query) |
-            models.Q(title_de__icontains=query) |
-            models.Q(description_de__icontains=query) |
-            models.Q(prompt__icontains=query)
+            Q(title_en__icontains=query) |
+            Q(description_en__icontains=query) |
+            Q(title_de__icontains=query) |
+            Q(description_de__icontains=query) |
+            Q(prompt__icontains=query)
         ).distinct()
     else:
         pages = ColoringPage.objects.all()
