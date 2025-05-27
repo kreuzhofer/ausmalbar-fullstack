@@ -1,7 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.urls import path
 from django.shortcuts import redirect, render
-from django.contrib import messages
 from django.urls import reverse
 from django import forms
 from django.conf import settings
@@ -192,37 +191,49 @@ class ColoringPageAdmin(admin.ModelAdmin):
         return redirect('admin:coloring_pages_coloringpage_generate')
     
     def get_actions(self, request):
-        """Remove the default delete action"""
+        """Configure available actions"""
         actions = super().get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
+        
+        # Remove all delete actions first
+        delete_actions = [name for name in actions.keys() if 'delete' in name.lower()]
+        for action in delete_actions:
+            del actions[action]
+            
+        # Add our custom delete action
+        actions['delete_selected'] = (
+            self.delete_selected_with_files,
+            'delete_selected',
+            'Delete selected %(verbose_name_plural)s'
+        )
+        
         return actions
     
-    def delete_selected_with_confirmation(self, request, queryset):
-        """Custom delete action with confirmation"""
-        if 'confirm' in request.POST:
-            # Delete the selected items
-            count = queryset.count()
-            queryset.delete()
-            self.message_user(request, f'Successfully deleted {count} coloring page(s).')
-            return None
+    def delete_selected_with_files(self, modeladmin, request, queryset):
+        """Custom action to delete selected objects and their associated files"""
+        # First delete the files
+        for obj in queryset:
+            # Delete the image file if it exists
+            if obj.image:
+                try:
+                    storage, path = obj.image.storage, obj.image.path
+                    storage.delete(path)
+                except Exception as e:
+                    self.message_user(request, f"Error deleting image for {obj}: {str(e)}", level='error')
+            
+            # Delete the thumbnail if it exists
+            if obj.thumbnail:
+                try:
+                    storage, path = obj.thumbnail.storage, obj.thumbnail.path
+                    storage.delete(path)
+                except Exception as e:
+                    self.message_user(request, f"Error deleting thumbnail for {obj}: {str(e)}", level='error')
         
-        # Show confirmation page
-        context = {
-            'title': 'Are you sure?',
-            'objects_name': 'coloring page(s)',
-            'queryset': queryset,
-            'opts': self.model._meta,
-            'action_checkbox_name': ACTION_CHECKBOX_NAME,
-        }
-        
-        return TemplateResponse(
-            request,
-            self.delete_confirmation_template,
-            context
-        )
+        # Then delete the database records
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, f'Successfully deleted {count} coloring page(s).', messages.SUCCESS)
     
-    delete_selected_with_confirmation.short_description = 'Delete selected coloring pages'
+    delete_selected_with_files.short_description = 'Delete selected coloring pages and their files'
     
     def delete_view(self, request, object_id, extra_context=None):
         """Override delete view to add confirmation"""

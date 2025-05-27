@@ -9,17 +9,6 @@
                 <i class="fas fa-palette me-2"></i>{% trans "Ausmalbar" %}
             </a>
             
-            <!-- Language Switcher -->
-            <div class="language-switcher">
-                {% get_current_language as CURRENT_LANGUAGE %}
-                {% get_available_languages as LANGUAGES %}
-                {% for lang_code, lang_name in LANGUAGES %}
-                    <a href="{% change_lang lang_code %}" class="{% if lang_code == CURRENT_LANGUAGE %}active{% endif %}" title="{{ lang_name }}">
-                        {{ lang_code|upper }}
-                    </a>
-                {% endfor %}
-            </div>
-            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -77,6 +66,20 @@
                     <h5>{% trans "Connect" %}</h5>
                     <ul class="list-unstyled">
                         <li><a href="https://github.com/kreuzhofer/ausmalbar-fullstack" target="_blank"><i class="fab fa-github me-2"></i>GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>{% trans "Language" %}</h5>
+                    <ul class="list-unstyled">
+                        {% get_current_language as CURRENT_LANGUAGE %}
+                        {% get_available_languages as LANGUAGES %}
+                        {% for lang_code, lang_name in LANGUAGES %}
+                            <li>
+                                <a href="{% change_lang lang_code %}" class="{% if lang_code == CURRENT_LANGUAGE %}fw-bold{% endif %}" title="{{ lang_name }}">
+                                    {{ lang_name }}
+                                </a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>

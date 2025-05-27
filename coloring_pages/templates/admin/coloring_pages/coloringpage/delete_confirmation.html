@@ -20,19 +20,23 @@
         <h5>Items to be deleted:</h5>
         <ul>
         {% for obj in queryset %}
-            <li>{{ obj.title }}</li>
+            <li>{{ obj.title_en|default:obj.title_de|default:obj.prompt|default:'Untitled' }}</li>
         {% endfor %}
         </ul>
     </div>
 
-    <form method="post" action="">
+    <form action="" method="post" id="changelist-form">
         {% csrf_token %}
         <div>
-            <input type="hidden" name="confirm" value="yes">
+            {% for obj in queryset %}
+                <input type="hidden" name="_selected_action" value="{{ obj.id }}">
+            {% endfor %}
+            <input type="hidden" name="action" value="delete_selected_with_confirmation">
             <input type="hidden" name="post" value="yes">
+            <input type="hidden" name="confirm" value="1">
             <div class="form-actions">
-                <input type="submit" value="Yes, I'm sure" class="btn btn-danger">
-                <a href="#" onclick="window.history.back(); return false;" class="button cancel-link">No, take me back</a>
+                <input type="submit" value="{% trans 'Yes, I\'m sure' %}" class="btn btn-danger">
+                <a href="#" onclick="window.history.back(); return false;" class="button cancel-link">{% trans 'No, take me back' %}</a>
             </div>
         </div>
     </form>
