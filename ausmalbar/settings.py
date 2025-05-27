@@ -2,7 +2,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load environment variables from .env.production first, then fall back to .env
+load_dotenv('.env.production')
+load_dotenv()  # This will not override variables already set
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,12 +77,36 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ausmalbar.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
+DB_NAME = os.getenv('DB_NAME', BASE_DIR / 'db.sqlite3')
+DB_USER = os.getenv('DB_USER', '')
+DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+DB_HOST = os.getenv('DB_HOST', '')
+DB_PORT = os.getenv('DB_PORT', '')
+
+if 'postgresql' in DB_ENGINE.lower():
+    # Ensure we're using the full module path for PostgreSQL
+    engine = 'django.db.backends.postgresql' if 'postgresql' in DB_ENGINE.lower() else DB_ENGINE
+    DATABASES = {
+        'default': {
+            'ENGINE': engine,
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT or '5432',
+            'OPTIONS': {
+                'connect_timeout': 5,  # 5 seconds timeout
+            },
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': str(BASE_DIR / 'db.sqlite3'),
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
