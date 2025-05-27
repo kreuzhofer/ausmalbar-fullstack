@@ -11,6 +11,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -22,6 +23,9 @@ COPY . .
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
+
+# Compile i18n messages
+RUN python manage.py compilemessages
 
 # Run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "ausmalbar.wsgi:application"]
