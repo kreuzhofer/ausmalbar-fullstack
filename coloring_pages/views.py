@@ -68,8 +68,16 @@ def download_image(request, pk):
     if not coloring_page.image:
         raise Http404("Image not found")
     
+    # Get the appropriate title based on the current language
+    language = request.LANGUAGE_CODE or 'en'
+    title = getattr(coloring_page, f'title_{language[:2]}', 'coloring_page')
+    
+    # Clean up the filename to be URL-safe
+    import re
+    filename = re.sub(r'[^\w\s-]', '', title).strip().replace(' ', '_')
+    
     response = HttpResponse(coloring_page.image.read(), content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename="{coloring_page.title}.png"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}.png"'
     return response
 
 
