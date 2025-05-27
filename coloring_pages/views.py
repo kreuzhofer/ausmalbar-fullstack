@@ -8,6 +8,8 @@ from io import BytesIO
 import requests
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Q
+from django.db.models.fields.files import ImageFieldFile
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
@@ -21,7 +23,7 @@ from PIL import Image
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
 from .models import ColoringPage
-from .utils import get_coloring_page_prompt, generate_title_and_description
+from .utils import get_coloring_page_prompt, generate_titles_and_descriptions
 
 
 # Moved to utils.py
@@ -32,7 +34,21 @@ def home(request):
 
 def search(request):
     query = request.GET.get('q', '')
-    pages = ColoringPage.objects.filter(description__icontains=query)
+    
+    # Search in both English and German fields
+    if query:
+        pages = ColoringPage.objects.filter(
+            models.Q(title_en__icontains=query) |
+            models.Q(description_en__icontains=query) |
+            models.Q(title_de__icontains=query) |
+            models.Q(description_de__icontains=query) |
+            models.Q(prompt__icontains=query)
+        ).distinct()
+    else:
+        pages = ColoringPage.objects.all()
+    
+    # Order by most recent first
+    pages = pages.order_by('-created_at')
     
     paginator = Paginator(pages, 8)
     page_number = request.GET.get('page', 1)
@@ -88,15 +104,18 @@ def generate_coloring_page(request):
             try:
                 client = OpenAI(api_key=settings.OPENAI_API_KEY)
                 
-                # Generate title and description using our utility function
-                title, description = generate_title_and_description(prompt)
+                # Generate titles and descriptions in both English and German
+                title_en, title_de, description_en, description_de = generate_titles_and_descriptions(prompt)
                 
-                # Ensure title is not too long (max 100 chars)
-                title = title[:100]
+                # Ensure titles are not too long (max 100 chars)
+                title_en = title_en[:100]
+                title_de = title_de[:100] if title_de else title_en  # Fallback to English if German is empty
                 
-                # Ensure we have at least a basic description
-                if not description:
-                    description = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+                # Ensure we have at least basic descriptions
+                if not description_en:
+                    description_en = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+                if not description_de:
+                    description_de = _('Eine Malvorlage von ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
                 
                 # Generate the image using DALL·E 3 with the original user prompt
                 prompt_text = get_coloring_page_prompt(prompt)
@@ -134,8 +153,10 @@ def generate_coloring_page(request):
                 
                 # Store the temporary file paths and other data in the session
                 request.session['pending_page'] = {
-                    'title': title,
-                    'description': description,
+                    'title_en': title_en,
+                    'title_de': title_de,
+                    'description_en': description_en,
+                    'description_de': description_de,
                     'prompt': prompt,  # Store the original prompt for regeneration
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,
@@ -186,10 +207,12 @@ def confirm_coloring_page(request):
         if action == 'confirm':
             # Save the page to the database
             try:
-                # Create a new ColoringPage instance
+                # Create a new ColoringPage instance with all language fields
                 page = ColoringPage(
-                    title=pending_page['title'],
-                    description=pending_page['description'],
+                    title_en=pending_page.get('title_en', ''),
+                    title_de=pending_page.get('title_de', pending_page.get('title_en', '')),
+                    description_en=pending_page.get('description_en', ''),
+                    description_de=pending_page.get('description_de', pending_page.get('description_en', '')),
                     prompt=pending_page['prompt']
                 )
                 
@@ -225,12 +248,18 @@ def confirm_coloring_page(request):
             # Get the prompt from the form or use the existing one
             prompt = request.POST.get('prompt', pending_page['prompt'])
             
-            # Generate new title and description based on the updated prompt
-            title, description = generate_title_and_description(prompt)
-            title = title[:100]  # Ensure title is not too long
+            # Generate new titles and descriptions based on the updated prompt
+            title_en, title_de, description_en, description_de = generate_titles_and_descriptions(prompt)
             
-            if not description:
-                description = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+            # Ensure titles are not too long (max 100 chars)
+            title_en = title_en[:100]
+            title_de = title_de[:100] if title_de else title_en
+            
+            # Ensure we have at least basic descriptions
+            if not description_en:
+                description_en = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+            if not description_de:
+                description_de = _('Eine Malvorlage von ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
             
             # Clean up old temp files
             if os.path.exists(pending_page['temp_dir']):
@@ -280,8 +309,10 @@ def confirm_coloring_page(request):
                 
                 # Update the pending page data with new files and updated metadata
                 request.session['pending_page'] = {
-                    'title': title,  # Use the newly generated title
-                    'description': description,  # Use the newly generated description
+                    'title_en': title_en,
+                    'title_de': title_de,
+                    'description_en': description_en,
+                    'description_de': description_de,
                     'prompt': prompt,  # Store the prompt that was used
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,

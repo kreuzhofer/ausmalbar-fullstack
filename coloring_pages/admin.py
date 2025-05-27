@@ -28,10 +28,23 @@ class ColoringPageAddForm(forms.ModelForm):
 
 @admin.register(ColoringPage)
 class ColoringPageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'created_at', 'updated_at')
+    list_display = ('title_en', 'title_de', 'created_at', 'updated_at')
     list_filter = ('created_at', 'updated_at')
-    search_fields = ('title', 'description', 'prompt')
+    search_fields = ('title_en', 'title_de', 'description_en', 'description_de', 'prompt')
     readonly_fields = ('created_at', 'updated_at', 'thumbnail_preview')
+    fieldsets = (
+        ('English Content', {
+            'fields': ('title_en', 'description_en')
+        }),
+        ('German Content', {
+            'fields': ('title_de', 'description_de'),
+            'classes': ('collapse',)
+        }),
+        ('Metadata', {
+            'fields': ('prompt', 'image', 'thumbnail', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
     actions = ['delete_selected_with_confirmation']
     
     # Use different forms for add and change views
@@ -57,54 +70,85 @@ class ColoringPageAdmin(admin.ModelAdmin):
                     'fields': ('prompt',)
                 }),
             )
-        # Change view - show all fields
-        return (
-            (None, {
-                'fields': ('title', 'description', 'prompt')
-            }),
-            ('Images', {
-                'fields': ('image', 'thumbnail_preview', 'thumbnail')
-            }),
-            ('Metadata', {
-                'fields': ('created_at', 'updated_at'),
-                'classes': ('collapse',)
-            }),
-        )
+        # Change view - use fieldsets defined in the class
+        return self.fieldsets
         
     def save_model(self, request, obj, form, change):
         """Generate title and description when creating a new coloring page"""
         if not change:  # Only for new objects
+            # First, generate titles and descriptions
             try:
                 client = OpenAI(api_key=settings.OPENAI_API_KEY)
                 
-                # Generate title and description using GPT-4o-mini
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are an AI that helps create SEO-friendly content for coloring pages."},
-                        {"role": "user", "content": f"Create a concise title (max 60 chars) and a short description (1-2 sentences) for a coloring page with this prompt: {obj.prompt}"}
-                    ],
-                    max_tokens=100
-                )
+                # Generate titles and descriptions in both languages
+                from .utils import generate_titles_and_descriptions
+                title_en, title_de, description_en, description_de = generate_titles_and_descriptions(obj.prompt)
                 
-                # Parse the response to extract title and description
-                result = response.choices[0].message.content.strip()
-                if ':' in result:
-                    title_part, desc_part = result.split(':', 1)
-                    title = title_part.replace('Title:', '').strip()
-                    description = desc_part.replace('Description:', '').strip()
-                else:
-                    # Fallback if the format is unexpected
-                    title = f"Coloring Page: {obj.prompt[:50]}"
-                    description = f"A beautiful coloring page featuring {obj.prompt}."
-                
-                obj.title = title
-                obj.description = description
+                # Set the generated content
+                obj.title_en = title_en[:100]  # Ensure max length
+                obj.title_de = title_de[:100] if title_de else title_en
+                obj.description_en = description_en or f"A coloring page of {obj.prompt[:90]}{'...' if len(obj.prompt) > 90 else ''}"
+                obj.description_de = description_de or f"Eine Malvorlage von {obj.prompt[:90]}{'...' if len(obj.prompt) > 90 else ''}"
                 
             except Exception as e:
                 # Fallback if AI generation fails
-                obj.title = f"Coloring Page: {obj.prompt[:50]}"
-                obj.description = f"A beautiful coloring page featuring {obj.prompt}."
+                obj.title_en = f"Coloring Page: {obj.prompt[:50]}"
+                obj.title_de = f"Ausmalbild: {obj.prompt[:50]}"
+                obj.description_en = f"A beautiful coloring page featuring {obj.prompt}."
+                obj.description_de = f"Eine schöne Malvorlage mit {obj.prompt}."
+                messages.warning(request, _('Generated default content due to AI service error.'))
+            
+            # Save the object first to get an ID
+            super().save_model(request, obj, form, change)
+            
+            # Then generate and save the image
+            try:
+                # Generate the image using the original prompt
+                from .utils import get_coloring_page_prompt
+                prompt_text = get_coloring_page_prompt(obj.prompt)
+                
+                response = client.images.generate(
+                    model="dall-e-3",
+                    prompt=prompt_text,
+                    size="1024x1024",
+                    quality="standard",
+                    n=1,
+                )
+                
+                # Download and save the image
+                image_url = response.data[0].url
+                img_response = requests.get(image_url)
+                img_response.raise_for_status()
+                
+                # Save the image to the model
+                img_io = BytesIO(img_response.content)
+                img_name = f"coloring_page_{obj.id}.png"
+                obj.image.save(img_name, img_io, save=True)
+                
+                # Create and save thumbnail
+                from PIL import Image
+                from io import BytesIO
+                
+                img = Image.open(BytesIO(img_response.content))
+                img.thumbnail((300, 300))
+                
+                thumb_io = BytesIO()
+                img.save(thumb_io, format='PNG')
+                thumb_io.seek(0)
+                
+                thumb_name = f"thumb_{obj.id}.png"
+                obj.thumbnail.save(thumb_name, thumb_io, save=False)
+                
+                # Save again to update the thumbnail
+                obj.save()
+                
+                messages.success(request, _('Coloring page was generated successfully.'))
+                return
+                
+            except Exception as e:
+                messages.error(request, _('Error generating coloring page image: %s') % str(e))
+                # Continue with saving even if image generation fails
+                return
         
         super().save_model(request, obj, form, change)
     

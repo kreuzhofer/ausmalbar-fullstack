@@ -18,20 +18,30 @@ class GenerateColoringPageForm(forms.Form):
 class ColoringPageForm(forms.ModelForm):
     class Meta:
         model = ColoringPage
-        fields = ['title', 'description', 'prompt']
+        fields = ['title_en', 'title_de', 'description_en', 'description_de', 'prompt']
         widgets = {
-            'title': forms.TextInput(attrs={
+            'title_en': forms.TextInput(attrs={
                 'class': 'vTextField',
-                'placeholder': 'Enter a title for the coloring page...'
+                'placeholder': 'Enter an English title for the coloring page...'
             }),
-            'description': forms.Textarea(attrs={
+            'title_de': forms.TextInput(attrs={
+                'class': 'vTextField',
+                'placeholder': 'Geben Sie einen deutschen Titel für die Malvorlage ein...'
+            }),
+            'description_en': forms.Textarea(attrs={
                 'class': 'vLargeTextField',
                 'rows': 3,
-                'placeholder': 'Enter a description for the coloring page...'
+                'placeholder': 'Enter an English description for the coloring page...'
+            }),
+            'description_de': forms.Textarea(attrs={
+                'class': 'vLargeTextField',
+                'rows': 3,
+                'placeholder': 'Geben Sie eine deutsche Beschreibung für die Malvorlage ein...'
             }),
             'prompt': forms.Textarea(attrs={
                 'class': 'vLargeTextField',
-                'rows': 4,
-                'placeholder': 'Describe the image you want to generate...'
+                'rows': 3,
+                'placeholder': 'The original prompt used to generate this page...',
+                'readonly': 'readonly'
             }),
         }

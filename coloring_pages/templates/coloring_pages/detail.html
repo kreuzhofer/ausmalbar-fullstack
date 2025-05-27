@@ -1,7 +1,7 @@
 {% extends 'coloring_pages/base.html' %}
 {% load i18n %}
 
-{% block title %}{{ page.title }} - {% trans "Ausmalbar" %}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %} - {% trans "Ausmalbar" %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -79,9 +79,9 @@
         </div>
         
         <div class="page-info mb-5">
-            <h2 class="mb-3">{{ page.title }}</h2>
+            <h1 class="mb-4">{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}</h1>
             {% if page.description %}
-                <p class="lead">{{ page.description }}</p>
+                <p class="lead">{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de }}{% else %}{{ page.description_en }}{% endif %}</p>
             {% endif %}
             <div class="text-muted">
                 <small>{% trans "Added on" %} {{ page.created_at|date:"F j, Y" }}</small>

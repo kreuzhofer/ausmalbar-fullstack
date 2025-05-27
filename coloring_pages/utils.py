@@ -2,41 +2,66 @@ from django.utils.translation import gettext_lazy as _
 import openai
 import os
 
-def generate_title_and_description(prompt: str) -> tuple[str, str]:
-    """Generate a title and description for the coloring page based on the prompt.
+def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
+    """Generate English and German titles and descriptions for the coloring page based on the prompt.
     
     Args:
         prompt: The user's prompt for the coloring page
         
     Returns:
-        tuple: (title, description)
+        tuple: (title_en, title_de, description_en, description_de)
     """
     client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
     
-    response = client.chat.completions.create(
+    # Generate English title and description
+    response_en = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are a helpful assistant that creates titles and descriptions for coloring pages. "
                                       "The title should be short and descriptive (3-5 words). "
                                       "The description should be 1-2 sentences that clearly describe the scene or subject. "
                                       "Return the title and description in this exact format: 'TITLE: title here\nDESCRIPTION: description here'"},
-            {"role": "user", "content": f"Create a title and description for a coloring page with this prompt: {prompt}"}
+            {"role": "user", "content": f"Create an English title and description for a coloring page with this prompt: {prompt}"}
         ],
         temperature=0.7,
         max_tokens=100
     )
     
-    # Parse the response
-    result = response.choices[0].message.content
+    # Generate German title and description
+    response_de = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Du bist ein hilfreicher Assistent, der Titel und Beschreibungen für Malvorlagen erstellt. "
+                                      "Der Titel sollte kurz und beschreibend sein (3-5 Wörter). "
+                                      "Die Beschreibung sollte 1-2 Sätze umfassen, die die Szene oder das Motiv klar beschreiben. "
+                                      "Antworte mit Titel und Beschreibung in genau diesem Format: 'TITEL: Titel hier\nBESCHREIBUNG: Beschreibung hier'"},
+            {"role": "user", "content": f"Erstelle einen deutschen Titel und eine Beschreibung für eine Malvorlage mit diesem Thema: {prompt}"}
+        ],
+        temperature=0.7,
+        max_tokens=100
+    )
+    
+    # Parse English response
     try:
-        title = result.split('TITLE:')[1].split('DESCRIPTION:')[0].strip()
-        description = result.split('DESCRIPTION:')[1].strip()
-        return title, description
+        result_en = response_en.choices[0].message.content
+        title_en = result_en.split('TITLE:')[1].split('DESCRIPTION:')[0].strip()
+        description_en = result_en.split('DESCRIPTION:')[1].strip()
     except (IndexError, AttributeError):
         # Fallback if parsing fails
-        default_title = prompt[:50] + ('...' if len(prompt) > 50 else '')
-        default_description = f"A coloring page of {prompt}"
-        return default_title, default_description
+        title_en = prompt[:50] + ('...' if len(prompt) > 50 else '')
+        description_en = f"A coloring page of {prompt}"
+    
+    # Parse German response
+    try:
+        result_de = response_de.choices[0].message.content
+        title_de = result_de.split('TITEL:')[1].split('BESCHREIBUNG:')[0].strip()
+        description_de = result_de.split('BESCHREIBUNG:')[1].strip()
+    except (IndexError, AttributeError):
+        # Fallback if parsing fails
+        title_de = title_en  # Fallback to English if German parsing fails
+        description_de = f"Eine Malvorlage von {prompt}"
+    
+    return title_en, title_de, description_en, description_de
 
 def get_coloring_page_prompt(prompt: str) -> str:
     """Generate a clean, simple prompt for creating coloring page images.

@@ -93,13 +93,23 @@
         <h2>{% trans 'Preview' %}</h2>
         
         <div class="preview-field">
-            <label>{% trans 'Title' %}:</label>
-            <div class="value">{{ page_data.title }}</div>
+            <label>{% trans 'Title (English)' %}:</label>
+            <div class="value">{{ page_data.title_en|default:_('(No title)') }}</div>
         </div>
         
         <div class="preview-field">
-            <label>{% trans 'Description' %}:</label>
-            <div class="value">{{ page_data.description }}</div>
+            <label>{% trans 'Description (English)' %}:</label>
+            <div class="value">{{ page_data.description_en|default:_('(No description)') }}</div>
+        </div>
+        
+        <div class="preview-field">
+            <label>{% trans 'Title (German)' %}:</label>
+            <div class="value">{{ page_data.title_de|default:_('(No title)') }}</div>
+        </div>
+        
+        <div class="preview-field">
+            <label>{% trans 'Description (German)' %}:</label>
+            <div class="value">{{ page_data.description_de|default:_('(No description)') }}</div>
         </div>
         
         <div class="preview-field">

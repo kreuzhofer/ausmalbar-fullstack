@@ -11,8 +11,15 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 class ColoringPage(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
+    # English fields
+    title_en = models.CharField(max_length=200, verbose_name='Title (English)')
+    description_en = models.TextField(verbose_name='Description (English)')
+    
+    # German fields
+    title_de = models.CharField(max_length=200, verbose_name='Title (German)')
+    description_de = models.TextField(verbose_name='Description (German)')
+    
+    # Common fields
     prompt = models.TextField()
     image = models.ImageField(upload_to='coloring_pages/')
     thumbnail = models.ImageField(upload_to='coloring_pages/thumbnails/', blank=True)
@@ -78,7 +85,7 @@ class ColoringPage(models.Model):
                 if getattr(self, field.name) != getattr(old, field.name)]
 
     def __str__(self):
-        return self.title
+        return self.title_en
 
     class Meta:
         ordering = ['-created_at']
@@ -116,6 +123,3 @@ class ColoringPage(models.Model):
                     os.rmdir(thumbnail_dir)
         except (ValueError, OSError) as e:
             print(f"Error deleting thumbnail file {thumbnail_path}: {e}")
-            
-    def __str__(self):
-        return self.title
