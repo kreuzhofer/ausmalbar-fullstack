@@ -17,9 +17,11 @@ def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
     response_en = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant that creates titles and descriptions for coloring pages. "
-                                      "The title should be short and descriptive (3-5 words). "
-                                      "The description should be 1-2 sentences that clearly describe the scene or subject. "
+            {"role": "system", "content": "You are a helpful assistant that creates titles and descriptions for line art coloring pages. "
+                                      "The title should be short and descriptive (3-5 words) of the main subject only. "
+                                      "The description should be 1-2 sentences that clearly describe the main subject. "
+                                      "Do not include any references to coloring, drawing, or art supplies. "
+                                      "Focus only on describing the subject itself. "
                                       "Return the title and description in this exact format: 'TITLE: title here\nDESCRIPTION: description here'"},
             {"role": "user", "content": f"Create an English title and description for a coloring page with this prompt: {prompt}"}
         ],
@@ -32,8 +34,10 @@ def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Du bist ein hilfreicher Assistent, der Titel und Beschreibungen für Malvorlagen erstellt. "
-                                      "Der Titel sollte kurz und beschreibend sein (3-5 Wörter). "
-                                      "Die Beschreibung sollte 1-2 Sätze umfassen, die die Szene oder das Motiv klar beschreiben. "
+                                      "Der Titel sollte kurz und beschreibend sein (3-5 Wörter) und nur das Hauptmotiv beschreiben. "
+                                      "Die Beschreibung sollte 1-2 Sätze umfassen, die das Hauptmotiv klar beschreiben. "
+                                      "Erwähne nicht, dass es sich um eine Malvorlage oder Zeichnung handelt. "
+                                      "Konzentriere dich nur auf die Beschreibung des Motivs selbst. "
                                       "Antworte mit Titel und Beschreibung in genau diesem Format: 'TITEL: Titel hier\nBESCHREIBUNG: Beschreibung hier'"},
             {"role": "user", "content": f"Erstelle einen deutschen Titel und eine Beschreibung für eine Malvorlage mit diesem Thema: {prompt}"}
         ],
@@ -73,11 +77,14 @@ def get_coloring_page_prompt(prompt: str) -> str:
         str: A clean prompt for the image generation
     """
     return _(
-        "Create a black and white line drawing of %(prompt)s. "
-        "Use clean, continuous black lines on pure white background. "
-        "No color, no shading, no gradients, no textures. "
-        "No background elements, borders, shadows, or drop shadows. "
-        "No text or labels. The image should be a single, clear outline drawing "
-        "suitable for coloring. All lines should be connected and form complete shapes. "
-        "The drawing should be centered and fill most of the frame without touching the edges."
+        "Create a clean black and white line drawing of %(prompt)s. "
+        "Use smooth, continuous black lines on pure white background. "
+        "No color, shading, gradients, textures, or patterns. "
+        "No background elements, borders, frames, shadows, or drop shadows. "
+        "No text, labels, or additional objects. Focus only on the main subject. "
+        "The image should be a single, clear outline drawing with all lines connected. "
+        "The subject should be centered and fill most of the frame WITHOUT TOUCHING THE EDGES. Avoid cutting off the main subject. "
+        "Do not include any elements that suggest it's a coloring page unless those are explicitly part of the prompt (NO PENCILS, CRAYONS, ETC.). "
+        "If you are asked for example for 'a cat' this means 'one cat' not multiple cats. avoid duplication of objects if not asked for."
+        "If the object is likely to have a highly detailed pattern, such as a flower or a leaf or the fur of a pet, do not include it so it can be colored. "
     ) % {'prompt': prompt}

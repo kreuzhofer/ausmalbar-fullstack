@@ -112,7 +112,7 @@ msgid "Search"
 msgstr "Suchen"
 
 msgid "Featured Coloring Pages"
-msgstr "Empfohlene Malvorlagen"
+msgstr "Neueste Ausmalbilder"
 
 msgid "View"
 msgstr "Ansehen"
