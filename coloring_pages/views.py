@@ -3,6 +3,7 @@ import io
 import os
 import tempfile
 import uuid
+from io import BytesIO
 from django.views.generic import TemplateView
 from django.conf import settings
 from django.views.generic.base import ContextMixin, TemplateResponseMixin, View
