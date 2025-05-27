@@ -186,8 +186,24 @@
         const shareButton = document.getElementById('shareButton');
         const shareButtons = document.getElementById('shareButtons');
         const currentUrl = encodeURIComponent(window.location.href);
-        const pageTitle = encodeURIComponent(document.title);
-        const shareText = encodeURIComponent('{% if request.LANGUAGE_CODE == "de" and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}');
+        
+        // Get page details for sharing
+        const pageTitle = '{% if request.LANGUAGE_CODE == "de" and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}';
+        const pageDescription = '{% if request.LANGUAGE_CODE == "de" and page.description_de %}{{ page.description_de }}{% else %}{{ page.description_en|default:"" }}{% endif %}';
+        
+        // Create share text using translations
+        let shareText = '';
+        const introText = '{% trans "Check out this amazing coloring page" %}';
+        const creativityText = '{% trans "Let your creativity flow! 🎨✏️" %}';
+        
+        if (pageDescription) {
+            shareText = `${introText}: "${pageTitle}" - ${pageDescription}\n\n${creativityText}`;
+        } else {
+            shareText = `${introText}: "${pageTitle}"\n\n${creativityText}`;
+        }
+        
+        // Encode the final share text
+        shareText = encodeURIComponent(shareText);
         
         // Toggle share buttons
         shareButton.addEventListener('click', function(e) {
@@ -204,10 +220,10 @@
         
         // Share URLs
         const shareUrls = {
-            facebook: `https://www.facebook.com/sharer/sharer.php?u=${currentUrl}`,
+            facebook: `https://www.facebook.com/sharer/sharer.php?u=${currentUrl}&quote=${shareText}`,
             twitter: `https://twitter.com/intent/tweet?url=${currentUrl}&text=${shareText}`,
-            whatsapp: `https://wa.me/?text=${shareText}%20${currentUrl}`,
-            email: `mailto:?subject=${shareText}&body=${shareText}%0A%0A${currentUrl}`,
+            whatsapp: `https://wa.me/?text=${shareText}%0A%0A${currentUrl}`,
+            email: `mailto:?subject=${encodeURIComponent('{% trans "Check out this amazing coloring page" %}: ' + pageTitle)}&body=${shareText}%0A%0A${currentUrl}`,
             instagram: 'https://www.instagram.com/', // Instagram doesn't support direct sharing, will open in new tab
             tiktok: 'https://www.tiktok.com/upload?lang=en' // TikTok also doesn't support direct sharing
         };
@@ -286,6 +302,44 @@
                     height: auto !important;
                 }
             }
+            
+            /* Style for share buttons */
+            .share-buttons {
+                display: none;
+                position: absolute;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                padding: 10px;
+                z-index: 1000;
+                margin-top: 10px;
+            }
+            .share-buttons.show {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .share-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                color: white;
+                font-size: 18px;
+                text-decoration: none;
+                transition: transform 0.2s, opacity 0.2s;
+            }
+            .share-button:hover {
+                transform: scale(1.1);
+                opacity: 0.9;
+            }
+            .facebook { background-color: #3b5998; }
+            .twitter { background-color: #1da1f2; }
+            .whatsapp { background-color: #25d366; }
+            .email { background-color: #ea4335; }
+            .copy { background-color: #6c757d; }
         `;
         document.head.appendChild(style);
     });

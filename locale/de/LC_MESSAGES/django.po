@@ -86,6 +86,12 @@ msgstr "Beschreibung"
 msgid "Black line drawing of %(prompt)s. Black outlines on white background. No color, no shading, no text, no background. Simple and clear outlines only."
 msgstr "Schwarz-weiß Strichzeichnung von %(prompt)s. Schwarze Umrisse auf weißem Hintergrund. Keine Farben, keine Schattierungen, kein Text, kein Hintergrund. Nur einfache und klare Umrisse."
 
+msgid "Check out this amazing coloring page"
+msgstr "Schau dir dieses tolle Ausmalbild an"
+
+msgid "Let your creativity flow! 🎨✏️"
+msgstr "Lass deiner Kreativität freien Lauf! 🎨✏️"
+
 msgid "Please enter a prompt"
 msgstr "Bitte geben Sie eine Eingabe ein"
 

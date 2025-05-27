@@ -50,6 +50,12 @@ msgstr ""
 msgid "Please correct the errors below."
 msgstr ""
 
+msgid "Check out this amazing coloring page"
+msgstr "Check out this amazing coloring page"
+
+msgid "Let your creativity flow! 🎨✏️"
+msgstr "Let your creativity flow! 🎨✏️"
+
 msgid "Cancel"
 msgstr ""
 
