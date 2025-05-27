@@ -18,7 +18,7 @@ services:
       - DB_PORT=${DB_PORT:-5432}
       - DB_NAME=${DB_NAME:-ausmalbar}
       - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-postgrespassword}
+      - DB_PASSWORD=${DB_PASSWORD:-postgrespass}
       - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
       - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin}
@@ -33,7 +33,7 @@ services:
       - .env.production
     environment:
       - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgrespassword}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-postgrespass}
       - POSTGRES_DB=${DB_NAME:-ausmalbar}
     volumes:
       - postgres_data:/var/lib/postgresql/data/
