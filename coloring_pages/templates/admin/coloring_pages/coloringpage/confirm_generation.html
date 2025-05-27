@@ -103,8 +103,9 @@
         </div>
         
         <div class="preview-field">
-            <label>{% trans 'Prompt' %}:</label>
-            <div class="value">{{ page_data.prompt }}</div>
+            <label for="prompt">{% trans 'Prompt' %}:</label>
+            <textarea id="prompt" name="prompt" class="form-control" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">{{ page_data.prompt }}</textarea>
+            <div class="help">{% trans 'You can modify the prompt before regenerating the image.' %}</div>
         </div>
         
         <div class="preview-field">
@@ -121,11 +122,12 @@
     
     <form method="post" id="confirmation_form">
         {% csrf_token %}
+        <input type="hidden" name="prompt" id="hidden_prompt" value="{{ page_data.prompt }}">
         <div class="action-buttons">
             <button type="submit" name="action" value="reject" class="btn-reject">
                 {% trans 'Reject & Discard' %}
             </button>
-            <button type="submit" name="action" value="regenerate" class="btn-regenerate">
+            <button type="button" id="regenerate_btn" class="btn-regenerate">
                 {% trans 'Regenerate' %}
             </button>
             <button type="submit" name="action" value="confirm" class="btn-confirm">
@@ -134,4 +136,35 @@
         </div>
     </form>
 </div>
+
+<script>
+// Handle the regenerate button click
+document.addEventListener('DOMContentLoaded', function() {
+    const regenerateBtn = document.getElementById('regenerate_btn');
+    const promptField = document.getElementById('prompt');
+    const hiddenPrompt = document.getElementById('hidden_prompt');
+    const form = document.getElementById('confirmation_form');
+    
+    if (regenerateBtn && promptField && hiddenPrompt && form) {
+        regenerateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Update the hidden prompt field with the current value
+            hiddenPrompt.value = promptField.value.trim();
+            
+            // Create a hidden input for the action
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'regenerate';
+            
+            // Add it to the form
+            form.appendChild(actionInput);
+            
+            // Submit the form
+            form.submit();
+        });
+    }
+});
+</script>
 {% endblock %}

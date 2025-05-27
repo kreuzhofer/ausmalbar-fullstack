@@ -21,7 +21,7 @@ from PIL import Image
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
 from .models import ColoringPage
-from .utils import get_coloring_page_prompt
+from .utils import get_coloring_page_prompt, generate_title_and_description
 
 
 # Moved to utils.py
@@ -88,101 +88,17 @@ def generate_coloring_page(request):
             try:
                 client = OpenAI(api_key=settings.OPENAI_API_KEY)
                 
-                # Generate title and description using GPT-4o-mini
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": """You are an AI that helps create content for images. 
-                        Always respond with just a 5-word title on the first line and a 1-2 sentence description on the second line. 
-                        The title should be exactly 5 words describing the image content only.
-                        Do not mention that it's a coloring page, line art, or anything about coloring.
-                        Do not use any markdown formatting, quotes, or special characters."""},
-                        {"role": "user", "content": f"""Create a 5-word title and short description for an image based on this: {prompt}
-                        
-                        Rules:
-                        - Title must be exactly 5 words
-                        - Title should describe only the image content
-                        - Do not mention coloring, line art, or that it's a page
-                        - Description should be 1-2 simple sentences
-                        - No markdown, quotes, or special characters
-                        
-                        Example:
-                        Happy dog playing in park
-                        A joyful golden retriever running through a sunny park with a ball in its mouth.
-                        
-                        Now create for: {prompt}"""}
-                    ],
-                    max_tokens=100,
-                    temperature=0.5
-                )
+                # Generate title and description using our utility function
+                title, description = generate_title_and_description(prompt)
                 
-                # Parse the response to extract title and description
-                result = response.choices[0].message.content.strip()
-                print(f"AI Response: {result}")  # Debug log
+                # Ensure title is not too long (max 100 chars)
+                title = title[:100]
                 
-                # Initialize with default values based on the prompt
-                default_title = ' '.join(prompt.split()[:5])  # First 5 words of prompt as fallback
-                default_description = f"Image featuring {prompt}."
+                # Ensure we have at least a basic description
+                if not description:
+                    description = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
                 
-                # Initialize with defaults
-                title = default_title
-                description = default_description
-                
-                # Clean up the response
-                cleaned_result = result.strip()
-                
-                # Try to parse the response
-                try:
-                    # Remove any markdown formatting and quotes
-                    cleaned_result = (
-                        cleaned_result
-                        .replace('**', '')
-                        .replace('*', '')
-                        .replace('"', '')
-                        .replace('\'', '')
-                        .strip()
-                    )
-                    
-                    # Split by newlines and remove empty lines
-                    lines = [line.strip() for line in cleaned_result.split('\n') if line.strip()]
-                    
-                    if lines:
-                        # Get title from first line and ensure it's 5 words
-                        title_words = lines[0].split()
-                        if len(title_words) > 5:
-                            title = ' '.join(title_words[:5])
-                        else:
-                            title = ' '.join(title_words)
-                        
-                        # If we have more lines, use them for description
-                        if len(lines) > 1:
-                            description = ' '.join(line.strip() for line in lines[1:] if line.strip())
-                    
-                    # Ensure title is exactly 5 words
-                    title_words = title.split()
-                    if len(title_words) < 5:
-                        # If title is too short, pad with words from prompt
-                        prompt_words = [w for w in prompt.split() if w.lower() not in ['a', 'an', 'the', 'and', 'or']]
-                        title = ' '.join(title_words + prompt_words)[:5]
-                    elif len(title_words) > 5:
-                        # If title is too long, truncate to 5 words
-                        title = ' '.join(title_words[:5])
-                    
-                    # Final cleanup
-                    title = title.strip(' .-,').capitalize()
-                    description = description.strip(' .-,').capitalize()
-                    
-                    # Ensure we don't have empty values
-                    if not title:
-                        title = default_title
-                    if not description:
-                        description = default_description
-                        
-                except Exception as e:
-                    print(f"Error parsing AI response: {e}")
-                    # Use the default values if parsing fails
-                
-                # Generate the image using DALL·E 3 with explicit instructions
+                # Generate the image using DALL·E 3 with the original user prompt
                 prompt_text = get_coloring_page_prompt(prompt)
                 
                 response = client.images.generate(
@@ -198,40 +114,29 @@ def generate_coloring_page(request):
                 image_data = response.data[0].b64_json
                 image_bytes = base64.b64decode(image_data)
                 
-                # Create a new ColoringPage instance
-                page = ColoringPage(
-                    title=title,
-                    description=description,
-                    prompt=prompt
-                )
-                
-                # Save images to temporary files
+                # Create a temporary directory to store the generated files
                 temp_dir = tempfile.mkdtemp()
                 image_name = f"coloring_{uuid.uuid4()}.png"
                 temp_image_path = os.path.join(temp_dir, image_name)
                 
-                # Save the main image
+                # Save the image to a temporary file
                 with open(temp_image_path, 'wb') as f:
                     f.write(image_bytes)
                 
                 # Generate thumbnail
-                from io import BytesIO
-                from PIL import Image as PILImage
-                
-                # Create thumbnail
-                img = PILImage.open(BytesIO(image_bytes))
-                img.thumbnail((256, 256), PILImage.LANCZOS)
+                img = Image.open(BytesIO(image_bytes))
+                img.thumbnail((256, 256), Image.LANCZOS)
                 
                 # Save thumbnail to temp file
                 thumb_name = f"thumb_{uuid.uuid4()}.png"
                 temp_thumb_path = os.path.join(temp_dir, thumb_name)
                 img.save(temp_thumb_path, format='PNG')
                 
-                # Store data in session for confirmation
+                # Store the temporary file paths and other data in the session
                 request.session['pending_page'] = {
                     'title': title,
                     'description': description,
-                    'prompt': prompt,
+                    'prompt': prompt,  # Store the original prompt for regeneration
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,
                     'temp_dir': temp_dir
@@ -317,8 +222,15 @@ def confirm_coloring_page(request):
                 return redirect('admin:coloring_pages_coloringpage_changelist')
         
         elif action == 'regenerate':
-            # Keep the prompt and regenerate the content
-            prompt = pending_page['prompt']
+            # Get the prompt from the form or use the existing one
+            prompt = request.POST.get('prompt', pending_page['prompt'])
+            
+            # Generate new title and description based on the updated prompt
+            title, description = generate_title_and_description(prompt)
+            title = title[:100]  # Ensure title is not too long
+            
+            if not description:
+                description = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
             
             # Clean up old temp files
             if os.path.exists(pending_page['temp_dir']):
@@ -331,7 +243,7 @@ def confirm_coloring_page(request):
                 # Generate new image using the same prompt
                 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
                 
-                # Generate the image using DALL·E 3 with explicit instructions
+                # Generate the image using DALL·E 3 with the user's original prompt
                 prompt_text = get_coloring_page_prompt(prompt)
                 
                 response = client.images.generate(
@@ -366,11 +278,11 @@ def confirm_coloring_page(request):
                 temp_thumb_path = os.path.join(temp_dir, thumb_name)
                 img.save(temp_thumb_path, format='PNG')
                 
-                # Update the pending page data with new files
+                # Update the pending page data with new files and updated metadata
                 request.session['pending_page'] = {
-                    'title': pending_page.get('title', _('New Coloring Page')),
-                    'description': pending_page.get('description', ''),
-                    'prompt': prompt,
+                    'title': title,  # Use the newly generated title
+                    'description': description,  # Use the newly generated description
+                    'prompt': prompt,  # Store the prompt that was used
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,
                     'temp_dir': temp_dir
