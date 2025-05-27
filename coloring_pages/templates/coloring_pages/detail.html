@@ -1,7 +1,7 @@
 {% extends 'coloring_pages/base.html' %}
 {% load i18n %}
 
-{% block title %}{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %} - {% trans "Ausmalbar" %}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %} - {% trans 'detail_page_title_suffix' %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -112,10 +112,10 @@
 {% block page_content %}
 <div class="row">
     <div class="col-lg-8 mx-auto">
-        <nav aria-label="{% trans 'breadcrumb' %}" class="mb-4">
+        <nav aria-label="{% trans 'detail_breadcrumb_label' %}" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'search' %}">{% trans "Coloring Pages" %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans 'detail_breadcrumb_home' %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'search' %}">{% trans 'detail_breadcrumb_coloring_pages' %}</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
             </ol>
         </nav>
@@ -126,20 +126,20 @@
             {% else %}
                 <div class="text-center p-5 bg-light">
                     <i class="fas fa-image fa-5x text-muted mb-3"></i>
-                    <p class="text-muted">{% trans "No image available" %}</p>
+                    <p class="text-muted">{% trans 'detail_no_image_available' %}</p>
                 </div>
             {% endif %}
             
             <div class="action-buttons justify-content-center">
                 <a href="{% url 'download_image' page.id %}" class="btn btn-primary btn-lg btn-download">
-                    <i class="fas fa-download me-2"></i> {% trans "Download" %}
+                    <i class="fas fa-download me-2"></i> {% trans 'detail_download_button' %}
                 </a>
                 <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">
-                    <i class="fas fa-print me-2"></i> {% trans "Print" %}
+                    <i class="fas fa-print me-2"></i> {% trans 'detail_print_button' %}
                 </button>
                 <div class="position-relative">
                     <a href="#" class="btn btn-outline-primary btn-lg" id="shareButton">
-                        <i class="fas fa-share-alt me-2"></i> {% trans "Share" %}
+                        <i class="fas fa-share-alt me-2"></i> {% trans 'detail_share_button' %}
                     </a>
                     <div class="share-buttons" id="shareButtons">
                         <a href="#" class="share-button facebook" title="Facebook" id="facebookShare">
@@ -151,10 +151,10 @@
                         <a href="#" class="share-button whatsapp" title="WhatsApp" id="whatsappShare">
                             <i class="fab fa-whatsapp"></i>
                         </a>
-                        <a href="#" class="share-button email" title="{% trans 'Email' %}" id="emailShare">
+                        <a href="#" class="share-button email" title="{% trans 'detail_share_email' %}" id="emailShare">
                             <i class="fas fa-envelope"></i>
                         </a>
-                        <a href="#" class="share-button copy" title="{% trans 'Copy link' %}" id="copyLink">
+                        <a href="#" class="share-button copy" title="{% trans 'detail_copy_link' %}" id="copyLink">
                             <i class="fas fa-link"></i>
                         </a>
 
@@ -169,7 +169,7 @@
                 <p class="lead">{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de }}{% else %}{{ page.description_en }}{% endif %}</p>
             {% endif %}
             <div class="text-muted">
-                <small>{% trans "Added on" %} {{ page.created_at|date:"F j, Y" }}</small>
+                <small>{% trans 'detail_added_on' %} {{ page.created_at|date:"F j, Y" }}</small>
             </div>
         </div>
         
@@ -193,8 +193,8 @@
         
         // Create share text using translations
         let shareText = '';
-        const introText = '{% trans "Check out this amazing coloring page" %}';
-        const creativityText = '{% trans "Let your creativity flow! 🎨✏️" %}';
+        const introText = '{% trans "detail_share_intro" %}';
+        const creativityText = '{% trans "detail_share_creativity" %}';
         
         if (pageDescription) {
             shareText = `${introText}: "${pageTitle}" - ${pageDescription}\n\n${creativityText}`;
@@ -266,7 +266,7 @@
                 await navigator.clipboard.writeText(window.location.href);
                 const copyBtn = e.currentTarget;
                 const originalTitle = copyBtn.getAttribute('title');
-                copyBtn.setAttribute('title', '{% trans "Link copied!" %}');
+                copyBtn.setAttribute('title', '{% trans "detail_link_copied" %}');
                 setTimeout(() => {
                     copyBtn.setAttribute('title', originalTitle);
                 }, 2000);

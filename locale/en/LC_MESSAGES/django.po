@@ -1,54 +1,52 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# English translations for Ausmalbar application
+# Copyright (C) 2025 Ausmalbar Team
+# This file is distributed under the same license as the Ausmalbar package.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: Ausmalbar 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-27 05:19+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2025-05-27 20:18+0000\n"
+"PO-Revision-Date: 2025-05-27 20:18+0000\n"
+"Last-Translator: Ausmalbar Team <team@ausmalbar.example.com>\n"
+"Language-Team: English <en@li.org>\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 msgid "Confirm Coloring Page Generation"
-msgstr ""
+msgstr "Confirm Coloring Page Generation"
 
 msgid "Preview"
-msgstr ""
+msgstr "Preview"
 
 msgid "Title"
-msgstr ""
+msgstr "Title"
 
 msgid "Description"
-msgstr ""
+msgstr "Description"
 
 msgid "Prompt"
-msgstr ""
+msgstr "Prompt"
 
 msgid "Reject & Discard"
-msgstr ""
+msgstr "Reject & Discard"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Regenerate"
 
 msgid "Confirm & Save"
-msgstr ""
+msgstr "Confirm & Save"
 
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 msgid "Please correct the error below."
-msgstr ""
+msgstr "Please correct the error below."
 
 msgid "Please correct the errors below."
-msgstr ""
+msgstr "Please correct the errors below."
 
 msgid "Check out this amazing coloring page"
 msgstr "Check out this amazing coloring page"
@@ -97,6 +95,225 @@ msgstr ""
 #, python-format
 msgid "Error generating image: %(error)s"
 msgstr ""
+
+# ============================================================================
+# Home page
+# ============================================================================
+
+msgid "home_page_title"
+msgstr "Free Coloring Pages for Kids - Ausmalbar"
+
+msgid "home_welcome_title"
+msgstr "Welcome to Ausmalbar!"
+
+msgid "home_welcome_subtitle"
+msgstr "Discover and print free coloring pages for kids of all ages."
+
+msgid "home_search_placeholder"
+msgstr "Search for animals, characters, or themes..."
+
+msgid "home_search_button"
+msgstr "Search"
+
+msgid "home_featured_title"
+msgstr "Featured Coloring Pages"
+
+msgid "home_no_pages_available"
+msgstr "No coloring pages available yet. Check back soon!"
+
+msgid "home_browse_all_button"
+msgstr "Browse All Pages"
+
+msgid "home_features_title"
+msgstr "Print & Color Anytime, Anywhere"
+
+msgid "home_features_subtitle"
+msgstr "Our collection of free printable coloring pages is perfect for kids of all ages."
+
+msgid "home_feature_free"
+msgstr "100% Free to download and print"
+
+msgid "home_feature_quality"
+msgstr "High-quality images"
+
+msgid "home_feature_updates"
+msgstr "New pages added regularly"
+
+msgid "home_start_button"
+msgstr "Start Coloring Now"
+
+msgid "home_image_alt"
+msgstr "Kids coloring"
+
+# ============================================================================
+# Base template
+# ============================================================================
+
+msgid "base_site_name"
+msgstr "Ausmalbar"
+
+msgid "base_nav_home"
+msgstr "Home"
+
+msgid "base_nav_search"
+msgstr "Search"
+
+msgid "base_nav_admin"
+msgstr "Admin"
+
+msgid "base_search_placeholder"
+msgstr "Search coloring pages..."
+
+msgid "base_search_aria_label"
+msgstr "Search"
+
+msgid "base_search_button"
+msgstr "Search"
+
+msgid "base_close_button"
+msgstr "Close"
+
+msgid "base_about_title"
+msgstr "About Ausmalbar"
+
+msgid "base_about_description"
+msgstr "Free printable coloring pages for kids. Download, print, and start coloring!"
+
+msgid "base_legal_title"
+msgstr "Legal"
+
+msgid "base_privacy_policy"
+msgstr "Privacy Policy"
+
+msgid "base_terms_of_service"
+msgstr "Terms of Service"
+
+msgid "base_connect_title"
+msgstr "Connect"
+
+msgid "base_language_title"
+msgstr "Language"
+
+msgid "base_copyright"
+msgstr "Ausmalbar. All rights reserved."
+
+# ============================================================================
+# Search page
+# ============================================================================
+
+msgid "search_page_title"
+msgstr "Search Results - Ausmalbar"
+
+msgid "Search results for \"%(query)s\""
+msgstr "Search results for \"%(query)s\""
+
+msgid "Search Results"
+msgstr "Search Results"
+
+msgid "%(counter)d result"
+msgid_plural "%(counter)d results"
+msgstr[0] "%(counter)d result"
+msgstr[1] "%(counter)d results"
+
+msgid " found"
+msgstr " found"
+
+msgid "No results found for \"%(query)s\""
+msgstr "No results found for \"%(query)s\""
+
+msgid "Please try a different search term."
+msgstr "Please try a different search term."
+
+msgid "Browse our collection of coloring pages"
+msgstr "Browse our collection of coloring pages"
+
+msgid "No coloring pages found."
+msgstr "No coloring pages found."
+
+msgid "Page navigation"
+msgstr "Page navigation"
+
+msgid "First page"
+msgstr "First page"
+
+msgid "Previous page"
+msgstr "Previous page"
+
+msgid "Next page"
+msgstr "Next page"
+
+msgid "Last page"
+msgstr "Last page"
+
+msgid "Current page"
+msgstr "Current page"
+
+msgid "search_page_navigation"
+msgstr "Page navigation"
+
+msgid "search_current_page"
+msgstr "(current)"
+
+msgid "search_first_page"
+msgstr "First"
+
+msgid "search_previous_page"
+msgstr "Previous"
+
+msgid "search_next_page"
+msgstr "Next"
+
+msgid "search_last_page"
+msgstr "Last"
+
+# ============================================================================
+# Detail page
+# ============================================================================
+
+msgid "detail_page_title_suffix"
+msgstr "Ausmalbar"
+
+msgid "detail_breadcrumb_label"
+msgstr "breadcrumb"
+
+msgid "detail_breadcrumb_home"
+msgstr "Home"
+
+msgid "detail_breadcrumb_coloring_pages"
+msgstr "Coloring Pages"
+
+msgid "detail_no_image_available"
+msgstr "No image available"
+
+msgid "detail_download_button"
+msgstr "Download"
+
+msgid "detail_print_button"
+msgstr "Print"
+
+msgid "detail_share_button"
+msgstr "Share"
+
+msgid "detail_share_email"
+msgstr "Email"
+
+msgid "detail_copy_link"
+msgstr "Copy link"
+
+msgid "detail_added_on"
+msgstr "Added on"
+
+msgid "detail_share_intro"
+msgstr "Check out this amazing coloring page"
+
+msgid "detail_share_creativity"
+msgstr "Let your creativity flow! 🎨✏️"
+
+msgid "detail_share_email_subject"
+msgstr "Check out this amazing coloring page"
+
+msgid "detail_link_copied"
+msgstr "Link copied!"
 
 # ============================================================================
 # Imprint page

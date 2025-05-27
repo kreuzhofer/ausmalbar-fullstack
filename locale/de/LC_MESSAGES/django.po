@@ -96,6 +96,51 @@ msgid "Please enter a prompt"
 msgstr "Bitte geben Sie eine Eingabe ein"
 
 # Home page
+msgid "home_page_title"
+msgstr "Kostenlose Malvorlagen für Kinder - Ausmalbar"
+
+msgid "home_welcome_title"
+msgstr "Willkommen bei Ausmalbar!"
+
+msgid "home_welcome_subtitle"
+msgstr "Entdecke unsere große Auswahl an kostenlosen Malvorlagen für Kinder jeden Alters."
+
+msgid "home_search_placeholder"
+msgstr "Nach Tieren, Figuren oder Themen suchen..."
+
+msgid "home_search_button"
+msgstr "Suchen"
+
+msgid "home_featured_title"
+msgstr "Neueste Malvorlagen"
+
+msgid "home_no_pages_available"
+msgstr "Noch keine Malvorlagen verfügbar. Schau bald wieder vorbei!"
+
+msgid "home_browse_all_button"
+msgstr "Alle Malvorlagen durchsuchen"
+
+msgid "home_features_title"
+msgstr "Warum unsere Malvorlagen?"
+
+msgid "home_features_subtitle"
+msgstr "Wir bieten hochwertige Malvorlagen für Kinder jeden Alters."
+
+msgid "home_feature_free"
+msgstr "100% kostenlos zum Herunterladen und Ausdrucken"
+
+msgid "home_feature_quality"
+msgstr "Hochwertige, altersgerechte Malvorlagen"
+
+msgid "home_feature_updates"
+msgstr "Regelmäßige Aktualisierungen mit neuen Motiven"
+
+msgid "home_start_button"
+msgstr "Jetzt loslegen"
+
+msgid "home_image_alt"
+msgstr "Kinder malen mit Buntstiften"
+
 msgid "Free Coloring Pages for Kids - Ausmalbar"
 msgstr "Kostenlose Malvorlagen für Kinder - Ausmalbar"
 
@@ -138,14 +183,7 @@ msgid "Print this page"
 msgstr "Diese Seite drucken"
 
 # Search page
-msgid "Search Results"
-msgstr "Suchergebnisse"
-
-msgid "No results found"
-msgstr "Keine Ergebnisse gefunden"
-
-msgid "Try a different search term."
-msgstr "Versuchen Sie einen anderen Suchbegriff."
+# Search-related messages are defined later in the file
 
 # Pagination
 msgid "Previous"
@@ -166,6 +204,176 @@ msgstr "Löschen"
 
 msgid "Print & Color Anytime, Anywhere"
 msgstr "Drucke & Male, wann und wo Du möchtest"
+
+# ============================================================================
+# Base template
+# ============================================================================
+
+msgid "base_site_name"
+msgstr "Ausmalbar"
+
+msgid "base_nav_home"
+msgstr "Startseite"
+
+msgid "base_nav_search"
+msgstr "Suchen"
+
+msgid "base_nav_admin"
+msgstr "Administration"
+
+msgid "base_search_placeholder"
+msgstr "Malvorlagen durchsuchen..."
+
+msgid "base_search_aria_label"
+msgstr "Suche"
+
+msgid "base_search_button"
+msgstr "Suchen"
+
+msgid "base_close_button"
+msgstr "Schließen"
+
+msgid "base_about_title"
+msgstr "Über Ausmalbar.de"
+
+msgid "base_about_description"
+msgstr "Kostenlose Ausmalbilder für Kinder. Herunterladen, ausdrucken und loslegen!"
+
+msgid "base_legal_title"
+msgstr "Rechtliches"
+
+msgid "base_privacy_policy"
+msgstr "Datenschutzerklärung"
+
+msgid "base_terms_of_service"
+msgstr "Nutzungsbedingungen"
+
+msgid "base_connect_title"
+msgstr "Kontakt"
+
+msgid "base_language_title"
+msgstr "Sprache"
+
+msgid "base_copyright"
+msgstr "Ausmalbar.de. Alle Rechte vorbehalten."
+
+# ============================================================================
+# Search page
+# ============================================================================
+
+msgid "search_page_title"
+msgstr "Suchergebnisse - Ausmalbar"
+
+msgid "Search results for \"%(query)s\""
+msgstr "Suchergebnisse für \"%(query)s\""
+
+msgid "Search Results"
+msgstr "Suchergebnisse"
+
+msgid "%(counter)d result"
+msgid_plural "%(counter)d results"
+msgstr[0] "%(counter)d Ergebnis"
+msgstr[1] "%(counter)d Ergebnisse"
+
+msgid " found"
+msgstr " gefunden"
+
+msgid "No results found for \"%(query)s\""
+msgstr "Keine Ergebnisse gefunden für \"%(query)s\""
+
+msgid "Please try a different search term."
+msgstr "Bitte versuchen Sie einen anderen Suchbegriff."
+
+msgid "Browse our collection of coloring pages"
+msgstr "Durchsuchen Sie unsere Sammlung von Malvorlagen"
+
+msgid "No coloring pages found."
+msgstr "Keine Malvorlagen gefunden."
+
+msgid "Page navigation"
+msgstr "Seitennavigation"
+
+msgid "First page"
+msgstr "Erste Seite"
+
+msgid "Previous page"
+msgstr "Vorherige Seite"
+
+msgid "Next page"
+msgstr "Nächste Seite"
+
+msgid "Last page"
+msgstr "Letzte Seite"
+
+msgid "Current page"
+msgstr "Aktuelle Seite"
+
+msgid "search_page_navigation"
+msgstr "Seitennavigation"
+
+msgid "search_current_page"
+msgstr "(aktuelle Seite)"
+
+msgid "search_first_page"
+msgstr "Erste Seite"
+
+msgid "search_previous_page"
+msgstr "Vorherige Seite"
+
+msgid "search_next_page"
+msgstr "Nächste Seite"
+
+msgid "search_last_page"
+msgstr "Letzte Seite"
+
+# ============================================================================
+# Detail page
+# ============================================================================
+
+msgid "detail_page_title_suffix"
+msgstr "Ausmalbar"
+
+msgid "detail_breadcrumb_label"
+msgstr "Breadcrumb"
+
+msgid "detail_breadcrumb_home"
+msgstr "Startseite"
+
+msgid "detail_breadcrumb_coloring_pages"
+msgstr "Malvorlagen"
+
+msgid "detail_no_image_available"
+msgstr "Kein Bild verfügbar"
+
+msgid "detail_download_button"
+msgstr "Herunterladen"
+
+msgid "detail_print_button"
+msgstr "Drucken"
+
+msgid "detail_share_button"
+msgstr "Teilen"
+
+msgid "detail_share_email"
+msgstr "E-Mail"
+
+msgid "detail_copy_link"
+msgstr "Link kopieren"
+
+msgid "detail_added_on"
+msgstr "Hinzugefügt am"
+
+msgid "detail_share_intro"
+msgstr "Schau dir diese tolle Malvorlage an"
+
+msgid "detail_share_creativity"
+msgstr "Lass deiner Kreativität freien Lauf! 🎨✏️"
+
+msgid "detail_share_email_subject"
+msgstr "Schau dir diese tolle Malvorlage an"
+
+msgid "detail_link_copied"
+msgstr "Link kopiert!"
 
 # ============================================================================
 # Imprint page

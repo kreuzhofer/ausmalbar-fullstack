@@ -6,7 +6,7 @@
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
         <div class="container position-relative">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <i class="fas fa-palette me-2"></i>{% trans "Ausmalbar" %}
+                <i class="fas fa-palette me-2"></i>{% trans 'base_site_name' %}
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -15,20 +15,20 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">{% trans "Home" %}</a>
+                        <a class="nav-link" href="{% url 'home' %}">{% trans 'base_nav_home' %}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'search' %}">{% trans "Search" %}</a>
+                        <a class="nav-link" href="{% url 'search' %}">{% trans 'base_nav_search' %}</a>
                     </li>
                     {% if user.is_staff %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin:index' %}">{% trans "Admin" %}</a>
+                        <a class="nav-link" href="{% url 'admin:index' %}">{% trans 'base_nav_admin' %}</a>
                     </li>
                     {% endif %}
                 </ul>
                 <form class="d-flex ms-3" action="{% url 'search' %}" method="get">
-                    <input class="form-control me-2" type="search" name="q" placeholder="{% trans 'Search coloring pages...' %}" aria-label="Search">
-                    <button class="btn btn-outline-light" type="submit">{% trans "Search" %}</button>
+                    <input class="form-control me-2" type="search" name="q" placeholder="{% trans 'base_search_placeholder' %}" aria-label="{% trans 'base_search_aria_label' %}">
+                    <button class="btn btn-outline-light" type="submit">{% trans 'base_search_button' %}</button>
                 </form>
             </div>
         </div>
@@ -39,7 +39,7 @@
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'Close' %}"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% trans 'base_close_button' %}"></button>
                 </div>
             {% endfor %}
         {% endif %}
@@ -52,24 +52,24 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-6">
-                    <h5>{% trans "About Ausmalbar" %}</h5>
-                    <p>{% trans "Free printable coloring pages for kids. Download, print, and start coloring!" %}</p>
+                    <h5>{% trans 'base_about_title' %}</h5>
+                    <p>{% trans 'base_about_description' %}</p>
                 </div>
                 <div class="col-md-3">
-                    <h5>{% trans "Legal" %}</h5>
+                    <h5>{% trans 'base_legal_title' %}</h5>
                     <ul class="list-unstyled">
-                        <li><a href="/privacy/">{% trans "Privacy Policy" %}</a></li>
-                        <li><a href="/terms/">{% trans "Terms of Service" %}</a></li>
+                        <li><a href="/privacy/">{% trans 'base_privacy_policy' %}</a></li>
+                        <li><a href="/terms/">{% trans 'base_terms_of_service' %}</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>{% trans "Connect" %}</h5>
+                    <h5>{% trans 'base_connect_title' %}</h5>
                     <ul class="list-unstyled">
                         <li><a href="https://github.com/kreuzhofer/ausmalbar-fullstack" target="_blank"><i class="fab fa-github me-2"></i>GitHub</a></li>
                     </ul>
                 </div>
                 <div class="col-md-3">
-                    <h5>{% trans "Language" %}</h5>
+                    <h5>{% trans 'base_language_title' %}</h5>
                     <ul class="list-unstyled">
                         {% get_current_language as CURRENT_LANGUAGE %}
                         {% get_available_languages as LANGUAGES %}
@@ -84,7 +84,7 @@
                 </div>
             </div>
             <div class="text-center mt-3">
-                <p class="mb-0">&copy; {% now "Y" %} {% trans "Ausmalbar. All rights reserved." %}</p>
+                <p class="mb-0">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
             </div>
         </div>
     </footer>

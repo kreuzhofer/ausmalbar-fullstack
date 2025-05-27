@@ -1,28 +1,24 @@
 {% extends 'coloring_pages/base.html' %}
 {% load i18n %}
 
-{% block title %}{% if query %}{{ query|title }} - {% endif %}{% trans "Search Results - Ausmalbar" %}{% endblock %}
+{% block title %}{% if query %}{{ query|title }} - {% endif %}{% trans 'search_page_title' %}{% endblock %}
 
 {% block page_content %}
 <div class="py-4">
     <h1 class="mb-4">
         {% if query %}
-            {% blocktrans with query=query %}Search Results for "{{ query }}"{% endblocktrans %}
+{% blocktrans with query=query %}Search results for "{{ query }}"{% endblocktrans %}
         {% else %}
-            {% trans "Search Results" %}
+            {% trans 'Search Results' %}
         {% endif %}
     </h1>
     
     {% if query %}
         <p class="text-muted mb-4">
-            {% blocktrans count counter=page_obj.paginator.count %}
-                {{ counter }} result found
-            {% plural %}
-                {{ counter }} results found
-            {% endblocktrans %}
+{% blocktrans count counter=page_obj.paginator.count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktrans %}{% trans ' found' %}
         </p>
     {% else %}
-        <p class="text-muted mb-4">{% trans "Browse our collection of coloring pages" %}</p>
+        <p class="text-muted mb-4">{% trans 'Browse our collection of coloring pages' %}</p>
     {% endif %}
     
     <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-4">
@@ -32,9 +28,9 @@
         <div class="col-12">
             <div class="alert alert-info">
                 {% if query %}
-                    {% blocktrans %}No coloring pages found for "{{ query }}". Try a different search term.{% endblocktrans %}
+{% blocktrans with query=query %}No results found for "{{ query }}"{% endblocktrans %}. {% trans 'Please try a different search term.' %}
                 {% else %}
-                    {% trans "No coloring pages found. Try a different search term." %}
+                    {% trans 'No coloring pages found.' %}
                 {% endif %}
             </div>
         </div>
@@ -46,25 +42,25 @@
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page=1{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'First' %}">
+<a class="page-link" href="?page=1{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'search_first_page' %}">
                         <span aria-hidden="true">&laquo;&laquo;</span>
-                        <span class="visually-hidden">{% trans "First" %}</span>
+                        <span class="visually-hidden">{% trans 'search_first_page' %}</span>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Previous' %}">
+<a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'search_previous_page' %}">
                         <span aria-hidden="true">&laquo;</span>
-                        <span class="visually-hidden">{% trans "Previous" %}</span>
+                        <span class="visually-hidden">{% trans 'search_previous_page' %}</span>
                     </a>
                 </li>
             {% else %}
                 <li class="page-item disabled">
                     <span class="page-link" aria-hidden="true">&laquo;&laquo;</span>
-                    <span class="visually-hidden">{% trans "First" %}</span>
+                    <span class="visually-hidden">{% trans 'search_first_page' %}</span>
                 </li>
                 <li class="page-item disabled">
                     <span class="page-link" aria-hidden="true">&laquo;</span>
-                    <span class="visually-hidden">{% trans "Previous" %}</span>
+                    <span class="visually-hidden">{% trans 'search_previous_page' %}</span>
                 </li>
             {% endif %}
             
@@ -73,7 +69,7 @@
                     <li class="page-item active">
                         <span class="page-link">
                             {{ num }}
-                            <span class="visually-hidden">{% trans "(current)" %}</span>
+                            <span class="visually-hidden">{% trans 'Current page' %}</span>
                         </span>
                     </li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
@@ -87,15 +83,15 @@
             
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Next' %}">
+<a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'search_next_page' %}">
                         <span aria-hidden="true">&raquo;</span>
-                        <span class="visually-hidden">{% trans "Next" %}</span>
+                        <span class="visually-hidden">{% trans 'search_next_page' %}</span>
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'Last' %}">
+<a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query|urlencode }}{% endif %}" aria-label="{% trans 'search_last_page' %}">
                         <span aria-hidden="true">&raquo;&raquo;</span>
-                        <span class="visually-hidden">{% trans "Last" %}</span>
+                        <span class="visually-hidden">{% trans 'search_last_page' %}</span>
                     </a>
                 </li>
             {% else %}
