@@ -27,10 +27,10 @@ class ColoringPageAddForm(forms.ModelForm):
 
 @admin.register(ColoringPage)
 class ColoringPageAdmin(admin.ModelAdmin):
-    list_display = ('title_en', 'title_de', 'created_at', 'updated_at')
+    list_display = ('title_en', 'title_de', 'seo_url_en_column', 'seo_url_de_column', 'created_at', 'updated_at')
     list_filter = ('created_at', 'updated_at')
     search_fields = ('title_en', 'title_de', 'description_en', 'description_de', 'prompt')
-    readonly_fields = ('created_at', 'updated_at', 'thumbnail_preview')
+    readonly_fields = ('created_at', 'updated_at', 'thumbnail_preview', 'seo_url_en', 'seo_url_de')
     fieldsets = (
         ('English Content', {
             'fields': ('title_en', 'description_en')
@@ -40,11 +40,28 @@ class ColoringPageAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Metadata', {
-            'fields': ('prompt', 'image', 'thumbnail', 'created_at', 'updated_at'),
+            'fields': ('prompt', 'image', 'thumbnail', 'seo_url_en', 'seo_url_de', 'created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
     actions = ['delete_selected_with_confirmation']
+    
+    # Add methods to display clickable SEO URLs in the admin list
+    def seo_url_en_column(self, obj):
+        if obj.seo_url_en:
+            url = reverse('coloring_pages:detail_en', kwargs={'seo_url': obj.seo_url_en})
+            return format_html('<a href="{}" target="_blank">{}</a>', url, obj.seo_url_en)
+        return ""
+    seo_url_en_column.short_description = 'SEO URL (EN)'
+    seo_url_en_column.admin_order_field = 'seo_url_en'
+    
+    def seo_url_de_column(self, obj):
+        if obj.seo_url_de:
+            url = reverse('coloring_pages:detail_de', kwargs={'seo_url': obj.seo_url_de})
+            return format_html('<a href="{}" target="_blank">{}</a>', url, obj.seo_url_de)
+        return ""
+    seo_url_de_column.short_description = 'SEO URL (DE)'
+    seo_url_de_column.admin_order_field = 'seo_url_de'
     
     # Use different forms for add and change views
     add_form = ColoringPageAddForm

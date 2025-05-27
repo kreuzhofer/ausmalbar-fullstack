@@ -3,12 +3,31 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
+from django.utils.text import slugify
+from django.utils.translation import get_language
+from django.urls import reverse
 from PIL import Image
 import io
 import os
 import uuid
+import re
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+
+def create_unique_slug(model, field_value, field_name, slug_field_name):
+    """
+    Create a unique slug by appending an index if necessary.
+    """
+    slug = slugify(field_value)
+    unique_slug = slug
+    num = 1
+    
+    # Check if a slug with this name already exists
+    while model.objects.filter(**{f"{slug_field_name}__iexact": unique_slug}).exists():
+        unique_slug = f"{slug}-{num}"
+        num += 1
+    
+    return unique_slug
 
 class ColoringPage(models.Model):
     # English fields
@@ -23,8 +42,27 @@ class ColoringPage(models.Model):
     prompt = models.TextField()
     image = models.ImageField(upload_to='coloring_pages/')
     thumbnail = models.ImageField(upload_to='coloring_pages/thumbnails/', blank=True)
+    seo_url_en = models.SlugField(max_length=255, unique=True, blank=True, null=True, verbose_name='SEO URL (English)')
+    seo_url_de = models.SlugField(max_length=255, unique=True, blank=True, null=True, verbose_name='SEO URL (German)')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['seo_url_en']),
+            models.Index(fields=['seo_url_de']),
+        ]
+        ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        # Generate SEO URLs if they don't exist or if the title has changed
+        if not self.seo_url_en or 'title_en' in self.get_changed_fields():
+            self.seo_url_en = create_unique_slug(ColoringPage, self.title_en, 'title_en', 'seo_url_en')
+        
+        if not self.seo_url_de or 'title_de' in self.get_changed_fields():
+            self.seo_url_de = create_unique_slug(ColoringPage, self.title_de, 'title_de', 'seo_url_de')
+        
+        super().save(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         # Only process if this is a new image or the image has changed
@@ -90,6 +128,19 @@ class ColoringPage(models.Model):
     class Meta:
         ordering = ['-created_at']
         
+    def get_absolute_url(self, language=None):
+        """
+        Get the URL for this coloring page in the specified language.
+        If no language is specified, use the current language.
+        """
+        if not language:
+            language = get_language()
+        
+        if language == 'de' and self.seo_url_de:
+            return reverse('coloring_pages:detail_de', kwargs={'seo_url': self.seo_url_de})
+        # Default to English
+        return reverse('coloring_pages:detail_en', kwargs={'seo_url': self.seo_url_en or str(self.id)})
+    
     def delete(self, *args, **kwargs):
         """
         Delete the model instance and its associated files.

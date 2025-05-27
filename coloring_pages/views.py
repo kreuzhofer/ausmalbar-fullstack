@@ -3,10 +3,10 @@ import io
 import os
 import tempfile
 import uuid
+from django.conf import settings
 import requests
 from io import BytesIO
-from django.views.generic import TemplateView
-from django.conf import settings
+from django.views.generic import TemplateView, DetailView
 from django.views.generic.base import ContextMixin, TemplateResponseMixin, View
 from django.contrib import messages
 from django.db.models import Q
@@ -15,15 +15,16 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 from django.http import Http404, HttpResponse, HttpResponseServerError
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect, render, get_object_or_404
 from django.template import loader
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from openai import OpenAI
 from PIL import Image
+from django.utils import timezone
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
-from .models import ColoringPage
+from .models import ColoringPage, create_unique_slug
 from .utils import get_coloring_page_prompt, generate_titles_and_descriptions
 
 
@@ -61,8 +62,11 @@ def search(request):
     })
 
 def page_detail(request, pk):
+    """
+    Legacy view that redirects to the new SEO-friendly URL format.
+    """
     page = get_object_or_404(ColoringPage, pk=pk)
-    return render(request, 'coloring_pages/detail.html', {'page': page})
+    return redirect(page.get_absolute_url(), permanent=True)
 
 def download_image(request, pk):
     coloring_page = get_object_or_404(ColoringPage, pk=pk)
@@ -90,6 +94,39 @@ def page_not_found(request, exception=None, template_name='404.html'):
 def server_error(request, template_name='500.html'):
     """Custom 500 error handler."""
     return render(request, '500.html', status=500)
+
+
+class ColoringPageDetailView(DetailView):
+    model = ColoringPage
+    template_name = 'coloring_pages/detail.html'
+    context_object_name = 'page'
+    slug_field = 'seo_url_en'  # Default field to look up by
+    slug_url_kwarg = 'seo_url'  # Name of the URL parameter
+    
+    def get_object(self, queryset=None):
+        """
+        Get the object by checking both English and German SEO URLs.
+        """
+        # Determine which language URL was used
+        url_name = self.request.resolver_match.url_name
+        
+        if url_name == 'detail_de':
+            # For German URLs, look up by seo_url_de
+            self.slug_field = 'seo_url_de'
+        
+        # Get the object using the parent class's logic
+        obj = super().get_object(queryset=queryset)
+        
+        # If the object was found by ID (fallback), redirect to the SEO URL
+        if not obj:
+            raise Http404("No coloring page found matching the query")
+            
+        return obj
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_year'] = timezone.now().year
+        return context
 
 
 class ImprintView(TemplateView):
@@ -252,8 +289,13 @@ def confirm_coloring_page(request):
                     thumb_content = ContentFile(f.read())
                     page.thumbnail.save(os.path.basename(pending_page['thumb_path']), thumb_content)
                 
-                # Save the page
+                # Save the page first to get an ID
                 page.save()
+                
+                # Generate and save SEO URLs
+                page.seo_url_en = create_unique_slug(ColoringPage, page.title_en, 'title_en', 'seo_url_en')
+                page.seo_url_de = create_unique_slug(ColoringPage, page.title_de, 'title_de', 'seo_url_de')
+                page.save(update_fields=['seo_url_en', 'seo_url_de'])
                 
                 # Clean up temp files
                 if os.path.exists(pending_page['temp_dir']):
