@@ -11,7 +11,7 @@ from coloring_pages.sitemaps import sitemaps
 
 # Internationalized URL patterns
 urlpatterns = i18n_patterns(
-    path('', include('coloring_pages.urls')),
+    path('', include(('coloring_pages.urls', 'coloring_pages'), namespace='coloring_pages')),
     prefix_default_language=True
 )
 

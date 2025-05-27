@@ -2,7 +2,7 @@
 
 <div class="col d-flex">
     <div class="card w-100 d-flex flex-column" style="min-height: 300px;">
-        <a href="{% url 'page_detail' page.id %}" class="text-decoration-none d-block" style="height: 200px; overflow: hidden;">
+        <a href="{% url 'coloring_pages:page_detail' page.id %}" class="text-decoration-none d-block" style="height: 200px; overflow: hidden;">
             {% if page.thumbnail %}
             <img src="{{ page.thumbnail.url }}" class="img-fluid h-100 w-100" style="object-fit: contain;" alt="{{ page.title_en }}">
             {% else %}
@@ -19,8 +19,8 @@
                 {% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de|truncatewords:8 }}{% else %}{{ page.description_en|truncatewords:8 }}{% endif %}
             </p>
             <div class="d-flex justify-content-between gap-2 mt-auto">
-                <a href="{% url 'page_detail' page.id %}" class="btn btn-sm btn-outline-primary flex-grow-1">{% trans "View" %}</a>
-                <a href="{% url 'download_image' page.id %}" class="btn btn-sm btn-primary flex-grow-1">
+                <a href="{% url 'coloring_pages:page_detail' page.id %}" class="btn btn-sm btn-outline-primary flex-grow-1">{% trans "View" %}</a>
+                <a href="{% url 'coloring_pages:download_image' page.id %}" class="btn btn-sm btn-primary flex-grow-1">
                     <i class="fas fa-download me-1"></i> {% trans "preview_card_save" %}
                 </a>
             </div>

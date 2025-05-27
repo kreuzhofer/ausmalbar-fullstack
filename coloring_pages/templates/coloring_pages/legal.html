@@ -1,0 +1,94 @@
+{% extends 'coloring_pages/base.html' %}
+{% load i18n %}
+
+{% block title %}
+    {% if page_type == 'privacy' %}
+        {% trans 'Privacy Policy' %}
+    {% else %}
+        {% trans 'Terms of Service' %}
+    {% endif %}
+    - {% trans 'Ausmalbar' %}
+{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            {% if page_type == 'privacy' %}
+                <h1 class="mb-4">{% trans 'Privacy Policy' %}</h1>
+                {% get_current_language as LANGUAGE_CODE %}
+                {% if LANGUAGE_CODE == 'de' %}
+                    <!-- German Privacy Policy -->
+                    <h2>1. Datenschutz auf einen Blick</h2>
+                    <p>Diese Datenschutzerklärung klärt Sie über die Art, den Umfang und Zweck der Verarbeitung von personenbezogenen Daten innerhalb unseres Onlineangebotes auf.</p>
+                    
+                    <h2>2. Hosting und Inhalte</h2>
+                    <p>Wir hosten die Inhalte unserer Website bei folgendem Anbieter: [Hosting-Provider einfügen]</p>
+                    
+                    <h2>3. Allgemeine Hinweise und Pflichtinformationen</h2>
+                    <p>Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften.</p>
+                    
+                    <h2>4. Datenerfassung auf dieser Website</h2>
+                    <p>Unsere Website verwendet keine Technologien zur Analyse des Nutzungsverhaltens (z.B. Google Analytics).</p>
+                    
+                    <h2>5. Plugins und Tools</h2>
+                    <p>Diese Website nutzt Google AdSense, einen Werbedienst der Google Ireland Limited. Anbieter ist die Google Ireland Limited („Google“), Gordon House, Barrow Street, Dublin 4, Irland.</p>
+                    
+                {% else %}
+                    <!-- English Privacy Policy -->
+                    <h2>1. Privacy at a Glance</h2>
+                    <p>This privacy policy explains the nature, scope, and purpose of the processing of personal data within our online offering.</p>
+                    
+                    <h2>2. Hosting and Content</h2>
+                    <p>We host the content of our website with the following provider: [Insert hosting provider]</p>
+                    
+                    <h2>3. General Information and Mandatory Information</h2>
+                    <p>The operators of these pages take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with the statutory data protection regulations.</p>
+                    
+                    <h2>4. Data Collection on This Website</h2>
+                    <p>Our website does not use technologies to analyze user behavior (e.g., Google Analytics).</p>
+                    
+                    <h2>5. Plugins and Tools</h2>
+                    <p>This website uses Google AdSense, an advertising service provided by Google Ireland Limited. The provider is Google Ireland Limited ("Google"), Gordon House, Barrow Street, Dublin 4, Ireland.</p>
+                {% endif %}
+                
+            {% else %}
+                <h1 class="mb-4">{% trans 'Terms of Service' %}</h1>
+                {% get_current_language as LANGUAGE_CODE %}
+                {% if LANGUAGE_CODE == 'de' %}
+                    <!-- German Terms of Service -->
+                    <h2>1. Allgemeine Nutzungsbedingungen</h2>
+                    <p>Durch die Nutzung dieser Website erklären Sie sich mit diesen Nutzungsbedingungen einverstanden.</p>
+                    
+                    <h2>2. Urheberrecht</h2>
+                    <p>Die auf dieser Website veröffentlichten Inhalte unterliegen dem deutschen Urheberrecht.</p>
+                    
+                    <h2>3. Haftungsausschluss</h2>
+                    <p>Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.</p>
+                    
+                    <h2>4. Änderungen der Nutzungsbedingungen</h2>
+                    <p>Wir behalten uns das Recht vor, diese Nutzungsbedingungen jederzeit zu ändern. Die geänderten Bedingungen werden auf dieser Seite veröffentlicht.</p>
+                    
+                {% else %}
+                    <!-- English Terms of Service -->
+                    <h2>1. General Terms</h2>
+                    <p>By using this website, you agree to these terms of service.</p>
+                    
+                    <h2>2. Copyright</h2>
+                    <p>The content published on this website is subject to German copyright law.</p>
+                    
+                    <h2>3. Disclaimer</h2>
+                    <p>The contents of our pages have been created with the utmost care. However, we cannot guarantee the accuracy, completeness, or timeliness of the content.</p>
+                    
+                    <h2>4. Changes to Terms of Service</h2>
+                    <p>We reserve the right to modify these terms of service at any time. The modified terms will be published on this page.</p>
+                {% endif %}
+            {% endif %}
+            
+            <div class="mt-5">
+                <p>{% trans 'Last updated' %}: {% now "F Y" %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

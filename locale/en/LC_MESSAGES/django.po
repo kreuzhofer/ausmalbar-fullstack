@@ -248,6 +248,16 @@ msgstr "Last page"
 msgid "Current page"
 msgstr "Current page"
 
+# Legal Pages
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+
+msgid "Terms of Service"
+msgstr "Terms of Service"
+
+msgid "Last updated"
+msgstr "Last updated"
+
 msgid "search_page_navigation"
 msgstr "Page navigation"
 

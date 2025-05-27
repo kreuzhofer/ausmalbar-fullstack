@@ -308,6 +308,16 @@ msgstr "Letzte Seite"
 msgid "Current page"
 msgstr "Aktuelle Seite"
 
+# Legal Pages
+msgid "Privacy Policy"
+msgstr "Datenschutzerklärung"
+
+msgid "Terms of Service"
+msgstr "Nutzungsbedingungen"
+
+msgid "Last updated"
+msgstr "Zuletzt aktualisiert"
+
 msgid "search_page_navigation"
 msgstr "Seitennavigation"
 

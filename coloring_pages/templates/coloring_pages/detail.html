@@ -114,8 +114,8 @@
     <div class="col-lg-8 mx-auto">
         <nav aria-label="{% trans 'detail_breadcrumb_label' %}" class="mb-4">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans 'detail_breadcrumb_home' %}</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'search' %}">{% trans 'detail_breadcrumb_coloring_pages' %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'coloring_pages:home' %}">{% trans 'detail_breadcrumb_home' %}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'coloring_pages:search' %}">{% trans 'detail_breadcrumb_coloring_pages' %}</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{{ page.title }}</li>
             </ol>
         </nav>
@@ -131,7 +131,7 @@
             {% endif %}
             
             <div class="action-buttons justify-content-center">
-                <a href="{% url 'download_image' page.id %}" class="btn btn-primary btn-lg btn-download">
+                <a href="{% url 'coloring_pages:download_image' page.id %}" class="btn btn-primary btn-lg btn-download">
                     <i class="fas fa-download me-2"></i> {% trans 'detail_download_button' %}
                 </a>
                 <button class="btn btn-outline-secondary btn-lg" onclick="window.print()">

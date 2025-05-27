@@ -10,7 +10,7 @@
     
     <div class="row mt-5">
         <div class="col-lg-8 mx-auto">
-            <form class="row g-3" action="{% url 'search' %}" method="get">
+            <form class="row g-3" action="{% url 'coloring_pages:search' %}" method="get">
                 <div class="col-md-9">
                     <input type="text" name="q" class="form-control form-control-lg" placeholder="{% trans 'home_search_placeholder' %}">
                 </div>
@@ -41,7 +41,7 @@
     </div>
     
     <div class="text-center mt-5">
-        <a href="{% url 'search' %}" class="btn btn-primary btn-lg">{% trans "home_browse_all_button" %}</a>
+        <a href="{% url 'coloring_pages:search' %}" class="btn btn-primary btn-lg">{% trans "home_browse_all_button" %}</a>
     </div>
 </div>
 
@@ -56,7 +56,7 @@
                     <li><i class="fas fa-check text-success me-2"></i> {% trans "home_feature_quality" %}</li>
                     <li><i class="fas fa-check text-success me-2"></i> {% trans "home_feature_updates" %}</li>
                 </ul>
-                <a href="{% url 'search' %}" class="btn btn-primary mt-3">{% trans "home_start_button" %}</a>
+                <a href="{% url 'coloring_pages:search' %}" class="btn btn-primary mt-3">{% trans "home_start_button" %}</a>
             </div>
             <div class="col-md-6 d-none d-md-block">
                 <img src="{% static 'images/title.webp' %}" alt="{% trans 'home_image_alt' %}" class="img-fluid rounded">
