@@ -155,6 +155,14 @@ LANGUAGES = [
 # For example: "yourdomain.de:de,yourdomain.com:en"
 DOMAIN_LANGUAGE_MAPPING = os.getenv('DOMAIN_LANGUAGE_MAPPING', 'yourdomain.de:de,yourdomain.com:en')
 
+# Imprint settings
+IMPRINT_NAME = os.getenv('IMPRINT_NAME', 'Your Name or Company')
+IMPRINT_STREET = os.getenv('IMPRINT_STREET', 'Street Address')
+IMPRINT_CITY = os.getenv('IMPRINT_CITY', 'Postal Code City')
+IMPRINT_COUNTRY = os.getenv('IMPRINT_COUNTRY', 'Country')
+IMPRINT_EMAIL = os.getenv('IMPRINT_EMAIL', 'info@example.com')
+IMPRINT_PHONE = os.getenv('IMPRINT_PHONE', '+49 123 456789')
+
 # Path where Django looks for translation files
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale'),

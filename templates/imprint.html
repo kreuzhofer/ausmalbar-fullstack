@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans 'Imprint' %} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <h1 class="mb-4">{% trans 'imprint_title' %}</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans 'imprint_legal_disclosure' %}</h5>
+                    <p class="card-text">
+                        {% trans 'imprint_information_tmg' %}
+                    </p>
+                    <p class="card-text">
+                        <strong>{% trans 'imprint_contact' %}:</strong><br>
+                        {{ imprint_name }}<br>
+                        {{ imprint_street }}<br>
+                        {{ imprint_city }}<br>
+                        {{ imprint_country }}
+                    </p>
+                    <p class="card-text">
+                        <strong>{% trans 'imprint_contact' %}:</strong><br>
+                        {% trans 'imprint_email' %}: {{ imprint_email }}<br>
+                        {% trans 'imprint_phone' %}: {{ imprint_phone }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans 'imprint_disclaimer_title' %}</h5>
+                    <h6>{% trans 'imprint_liability_contents_heading' %}</h6>
+                    <p class="card-text">
+                        {% trans 'imprint_liability_contents_text' %}
+                    </p>
+                    <h6>{% trans 'imprint_copyright_heading' %}</h6>
+                    <p class="card-text">
+                        {% trans 'imprint_copyright_text' %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -163,3 +163,55 @@ msgstr "Speichern"
 
 msgid "Delete"
 msgstr "Löschen"
+
+msgid "Print & Color Anytime, Anywhere"
+msgstr "Drucke & Male, wann und wo Du möchtest"
+
+# ============================================================================
+# Imprint page
+# ============================================================================
+
+msgid "imprint_title"
+msgstr "Impressum"
+
+msgid "imprint_legal_disclosure"
+msgstr "Rechtliche Hinweise"
+
+msgid "imprint_information_tmg"
+msgstr "Informationen gemäß § 5 TMG"
+
+msgid "imprint_contact"
+msgstr "Kontakt"
+
+msgid "imprint_your_name_or_company"
+msgstr "Ihr Name oder Unternehmen"
+
+msgid "imprint_street_address"
+msgstr "Straße und Hausnummer"
+
+msgid "imprint_postal_code_city"
+msgstr "PLZ und Ort"
+
+msgid "imprint_country"
+msgstr "Land"
+
+msgid "imprint_email"
+msgstr "E-Mail"
+
+msgid "imprint_phone"
+msgstr "Telefon"
+
+msgid "imprint_disclaimer_title"
+msgstr "Haftungsausschluss"
+
+msgid "imprint_liability_contents_heading"
+msgstr "Haftung für Inhalte"
+
+msgid "imprint_liability_contents_text"
+msgstr "Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen."
+
+msgid "imprint_copyright_heading"
+msgstr "Urheberrecht"
+
+msgid "imprint_copyright_text"
+msgstr "Unsere Webseiten und deren Inhalte unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Urhebers bzw. Erstellers."

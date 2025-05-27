@@ -3,10 +3,9 @@ import io
 import os
 import tempfile
 import uuid
-from io import BytesIO
-
-import requests
+from django.views.generic import TemplateView
 from django.conf import settings
+from django.views.generic.base import ContextMixin, TemplateResponseMixin, View
 from django.contrib import messages
 from django.db.models import Q
 from django.db.models.fields.files import ImageFieldFile
@@ -89,6 +88,23 @@ def page_not_found(request, exception=None, template_name='404.html'):
 def server_error(request, template_name='500.html'):
     """Custom 500 error handler."""
     return render(request, '500.html', status=500)
+
+
+class ImprintView(TemplateView):
+    template_name = 'imprint.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add imprint information from environment variables
+        context.update({
+            'imprint_name': settings.IMPRINT_NAME,
+            'imprint_street': settings.IMPRINT_STREET,
+            'imprint_city': settings.IMPRINT_CITY,
+            'imprint_country': settings.IMPRINT_COUNTRY,
+            'imprint_email': settings.IMPRINT_EMAIL,
+            'imprint_phone': settings.IMPRINT_PHONE,
+        })
+        return context
 
 # Admin view for generating new coloring pages
 def generate_coloring_page(request):
