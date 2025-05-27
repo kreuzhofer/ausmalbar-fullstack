@@ -18,6 +18,17 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 # Read ALLOWED_HOSTS from environment variable, default to localhost for development
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# Add all domains from DOMAIN_LANGUAGE_MAPPING to ALLOWED_HOSTS
+domain_mapping = os.getenv('DOMAIN_LANGUAGE_MAPPING', '')
+for mapping in domain_mapping.split(','):
+    if ':' in mapping:
+        domain = mapping.split(':', 1)[0].strip()
+        # Add both domain and www.domain to ALLOWED_HOSTS
+        if domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(domain)
+        if f'www.{domain}' not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(f'www.{domain}')
+
 # Thumbnail settings
 THUMBNAIL_SIZE = (256, 256)
 THUMBNAIL_QUALITY = 85  # Good balance between quality and file size
@@ -54,7 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'coloring_pages.middleware.RobotsTxtMiddleware',  # For serving robots.txt
+    'coloring_pages.middleware.DomainLanguageRedirectMiddleware',  # Domain-based language redirect
 ]
 
 ROOT_URLCONF = 'ausmalbar.urls'
@@ -138,6 +149,11 @@ LANGUAGES = [
     ('en', 'English'),
     ('de', 'Deutsch'),
 ]
+
+# Domain to language mapping
+# Format: "domain1.com:lang1,domain2.com:lang2"
+# For example: "yourdomain.de:de,yourdomain.com:en"
+DOMAIN_LANGUAGE_MAPPING = os.getenv('DOMAIN_LANGUAGE_MAPPING', 'yourdomain.de:de,yourdomain.com:en')
 
 # Path where Django looks for translation files
 LOCALE_PATHS = [
