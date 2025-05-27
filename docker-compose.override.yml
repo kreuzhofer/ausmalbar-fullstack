@@ -9,10 +9,13 @@ services:
       - DJANGO_DEBUG=True
     volumes:
       - .:/app
-      - /app/venv/
-      - /app/staticfiles/
-      - /app/media/
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
+      - venv:/app/venv
     ports:
       - "8000:8000"
     stdin_open: true
     tty: true
+
+volumes:
+  venv:

@@ -50,5 +50,8 @@ services:
 
 volumes:
   postgres_data:
+    name: ausmalbar_postgres_data
   static_volume:
+    name: ausmalbar_static_volume
   media_volume:
+    name: ausmalbar_media_volume

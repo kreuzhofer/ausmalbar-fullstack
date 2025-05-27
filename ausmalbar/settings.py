@@ -18,6 +18,23 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 # Read ALLOWED_HOSTS from environment variable, default to localhost for development
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF and security settings
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+CSRF_USE_SESSIONS = os.getenv('CSRF_USE_SESSIONS', 'False') == 'True'
+CSRF_COOKIE_HTTPONLY = os.getenv('CSRF_COOKIE_HTTPONLY', 'True') == 'True'
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+SESSION_COOKIE_HTTPONLY = os.getenv('SESSION_COOKIE_HTTPONLY', 'True') == 'True'
+
+# Set CSRF_TRUSTED_ORIGINS from environment variable
+if os.getenv('CSRF_TRUSTED_ORIGINS'):
+    CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
+
+# Set SECURE_PROXY_SSL_HEADER if configured
+if os.getenv('SECURE_PROXY_SSL_HEADER'):
+    SECURE_PROXY_SSL_HEADER = tuple(os.getenv('SECURE_PROXY_SSL_HEADER').split(','))
+
 # Add all domains from DOMAIN_LANGUAGE_MAPPING to ALLOWED_HOSTS
 domain_mapping = os.getenv('DOMAIN_LANGUAGE_MAPPING', '')
 for mapping in domain_mapping.split(','):
