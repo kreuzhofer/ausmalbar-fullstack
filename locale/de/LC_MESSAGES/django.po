@@ -215,3 +215,7 @@ msgstr "Urheberrecht"
 
 msgid "imprint_copyright_text"
 msgstr "Unsere Webseiten und deren Inhalte unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Urhebers bzw. Erstellers."
+
+# Preview card
+msgid "preview_card_save"
+msgstr "Herunterladen"
