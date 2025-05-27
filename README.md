@@ -6,12 +6,11 @@ A Django-based web application for generating, managing, and searching AI-create
 
 ### Prerequisites
 
-- Python 3.8+
-- pip
+- Docker and Docker Compose
 - OpenAI API key (for image generation)
 - (Optional) AWS account for S3 storage
 
-### Installation
+## 🛠 Development Setup
 
 1. **Clone the repository**
    ```bash
@@ -19,35 +18,85 @@ A Django-based web application for generating, managing, and searching AI-create
    cd ausmalbar
    ```
 
-2. **Set up the environment**
+2. **Set up environment variables**
+   - Copy `.env.example` to `.env`
+   - Edit `.env` and add your OpenAI API key
+   - Configure other settings as needed
+
+3. **Start the development environment**
    ```bash
-   # Make the setup script executable
-   chmod +x setup.sh
+   # Build and start containers
+   docker-compose up -d
    
-   # Run the setup script
-   ./setup.sh
+   # View logs
+   docker-compose logs -f
    ```
 
-   This will:
-   - Create a Python virtual environment
-   - Install all dependencies
-   - Create a `.env` file with default settings
-   - Run database migrations
-   - Create a superuser (admin/admin)
+4. **Access the application**
+   - Website: http://localhost:8000/
+   - Admin: http://localhost:8000/admin/
+   - Default admin credentials (from .env):
+     - Username: admin
+     - Password: admin
 
-3. **Configure your environment**
-   - Edit the `.env` file and add your OpenAI API key
-   - (Optional) Add AWS credentials if using S3 for storage
+5. **Development workflow**
+   - The application code is mounted into the container for live reloading
+   - Static files are served from `static_volume`
+   - Media files are stored in `media_volume`
 
-4. **Start the development server**
+## 🚀 Production Deployment
+
+1. **Prepare the production environment**
    ```bash
-   source venv/bin/activate  # Activate virtual environment
-   python manage.py runserver
+   # Create .env.production from .env.example
+   cp .env.example .env.production
+   
+   # Edit .env.production with production settings
+   # Make sure to set:
+   # - DEBUG=False
+   # - ALLOWED_HOSTS=your-domain.com,www.your-domain.com
+   # - Configure database and other production settings
    ```
 
-5. **Access the application**
-   - Website: http://127.0.0.1:8000/
-   - Admin: http://127.0.0.1:8000/admin/ (admin/admin)
+2. **Set up domain language mapping**
+   In `.env.production`, configure:
+   ```
+   DOMAIN_LANGUAGE_MAPPING={"your-domain.com": "de", "en.your-domain.com": "en"}
+   ```
+
+3. **Deploy with Docker Compose**
+   ```bash
+   # Start production services
+   docker-compose -f docker-compose.prod.yml up -d
+   
+   # View logs
+   docker-compose -f docker-compose.prod.yml logs -f
+   ```
+
+4. **Set up a reverse proxy (Nginx example)**
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com www.your-domain.com;
+       
+       location / {
+           proxy_pass http://localhost:8000;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+
+5. **Set up SSL (Let's Encrypt)**
+   ```bash
+   # Install certbot
+   sudo apt install certbot python3-certbot-nginx
+   
+   # Obtain and install certificate
+   sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+   ```
 
 ## ⚙️ Configuration
 
@@ -78,6 +127,18 @@ DJANGO_SUPERUSER_EMAIL=admin@example.com
 DJANGO_SUPERUSER_PASSWORD=admin
 ```
 
+## 🛠 Using S3 for Media Storage (Optional)
+
+1. Update `.env.production` with your AWS credentials:
+   ```
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_STORAGE_BUCKET_NAME=your_bucket_name
+   AWS_S3_REGION_NAME=your_region
+   ```
+
+2. The application will automatically use S3 for media storage when these variables are set.
+
 ## 🎨 Using the Application
 
 ### For Admins
@@ -107,40 +168,53 @@ DJANGO_SUPERUSER_PASSWORD=admin
    - Click the "Download" button on any coloring page
    - Or right-click and "Save image as..."
 
-## 🚀 Deployment
+## 🔄 Maintenance
 
-### Production Setup
+### Managing Data
 
-1. **Web Server**
-   - Use Nginx as a reverse proxy
-   - Configure Gunicorn as the application server
-
-2. **Database**
-   - For production, use PostgreSQL instead of SQLite
-   - Configure database connection in settings.py
-
-3. **Static Files**
-   - Use WhiteNoise for serving static files
-   - Or configure your web server to serve them directly
-
-4. **Media Files**
-   - For production, use S3 or another cloud storage solution
-   - Update the storage settings in settings.py
-
-### Docker Deployment
-
-A `Dockerfile` and `docker-compose.yml` are provided for containerized deployment:
-
+#### Backing up volumes
 ```bash
-# Build and start containers
-docker-compose up --build -d
+# Backup media files
+docker run --rm -v ausmalbar-fullstack_media_volume:/source -v $(pwd):/backup alpine tar czf /backup/media_backup_$(date +%Y%m%d).tar.gz -C /source ./
 
-# Run migrations
-docker-compose exec web python manage.py migrate
-
-# Create superuser
-docker-compose exec web python manage.py createsuperuser
+# Backup database
+docker-compose exec db pg_dump -U postgres ausmalbar > backup_$(date +%Y%m%d).sql
 ```
+
+#### Restoring from backup
+```bash
+# Restore media files
+docker run --rm -v ausmalbar-fullstack_media_volume:/target -v $(pwd):/backup alpine sh -c "rm -rf /target/* /target/..?* /target/.[!.]* ; tar xzf /backup/media_backup_20230527.tar.gz -C /target"
+
+# Restore database
+cat backup_20230527.sql | docker-compose exec -T db psql -U postgres ausmalbar
+```
+
+### Updating the Application
+
+1. Pull the latest changes
+   ```bash
+   git pull origin main
+   ```
+
+2. Rebuild and restart the services
+   ```bash
+   # For development
+   docker-compose up -d --build
+   
+   # For production
+   docker-compose -f docker-compose.prod.yml up -d --build
+   ```
+
+3. Run migrations if needed
+   ```bash
+   docker-compose exec web python manage.py migrate
+   ```
+
+4. Collect static files
+   ```bash
+   docker-compose exec web python manage.py collectstatic --noinput
+   ```
 
 ## 🛠 Development
 
