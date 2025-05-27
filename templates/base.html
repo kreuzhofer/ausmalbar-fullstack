@@ -88,19 +88,5 @@
     
     <!-- Custom JS -->
     {% block extra_js %}{% endblock %}
-    
-    <footer class="mt-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="mb-0">
-                        &copy; {% now "Y" %} {% trans 'Ausmalbar. All rights reserved.' %}
-                        <span class="mx-2">|</span>
-                        <a href="{% url 'coloring_pages:imprint' %}" class="text-muted">{% trans 'Imprint' %}</a>
-                    </p>
-                </div>
-            </div>
-        </div>
-    </footer>
 </body>
 </html>

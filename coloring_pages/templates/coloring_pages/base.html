@@ -56,13 +56,6 @@
                     <p>{% trans 'base_about_description' %}</p>
                 </div>
                 <div class="col-md-3">
-                    <h5>{% trans 'base_legal_title' %}</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'coloring_pages:privacy_policy' %}">{% trans 'base_privacy_policy' %}</a></li>
-                        <li><a href="{% url 'coloring_pages:terms_of_service' %}">{% trans 'base_terms_of_service' %}</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
                     <h5>{% trans 'base_connect_title' %}</h5>
                     <ul class="list-unstyled">
                         <li><a href="https://github.com/kreuzhofer/ausmalbar-fullstack" target="_blank"><i class="fab fa-github me-2"></i>GitHub</a></li>
@@ -84,7 +77,14 @@
                 </div>
             </div>
             <div class="text-center mt-3">
-                <p class="mb-0">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
+                <div class="footer-links">
+                    <a href="{% url 'coloring_pages:privacy_policy' %}">{% trans 'base_privacy_policy' %}</a>
+                    <span class="mx-2">|</span>
+                    <a href="{% url 'coloring_pages:terms_of_service' %}">{% trans 'base_terms_of_service' %}</a>
+                    <span class="mx-2">|</span>
+                    <a href="{% url 'coloring_pages:imprint' %}">{% trans 'imprint_title' %}</a>
+                </div>
+                <p class="mb-0 mt-2">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
             </div>
         </div>
     </footer>
