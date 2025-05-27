@@ -29,15 +29,17 @@ urlpatterns += [
     path('i18n/', include('django.conf.urls.i18n')),
 ]
 
-# Serve media files in development and production
+# Serve media files in both development and production
+from django.views.static import serve
+
+# Serve media files
+urlpatterns += [
+    path(f'{settings.MEDIA_URL.strip("/")}/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+]
+
+# Serve static files in development
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-else:
-    # In production, we need to serve media files through Django
-    from django.views.static import serve
-    urlpatterns += [
-        path(f'{settings.MEDIA_URL.strip("/")}/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
-    ]
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Error handlers
 handler404 = 'coloring_pages.views.page_not_found'

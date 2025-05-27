@@ -5,7 +5,6 @@ services:
     build: .
     command: bash -c "python manage.py wait_for_db && python manage.py migrate && python manage.py collectstatic --noinput && PYTHONPATH=/app python /app/scripts/create_admin.py && gunicorn --bind 0.0.0.0:8000 ausmalbar.wsgi:application"
     volumes:
-      - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
