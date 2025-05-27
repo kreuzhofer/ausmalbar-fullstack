@@ -3,6 +3,7 @@ import io
 import os
 import tempfile
 import uuid
+import requests
 from io import BytesIO
 from django.views.generic import TemplateView
 from django.conf import settings
