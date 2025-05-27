@@ -1,5 +1,5 @@
 {% extends 'coloring_pages/base.html' %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{% trans "Free Coloring Pages for Kids - Ausmalbar" %}{% endblock %}
 
@@ -77,7 +77,7 @@
                 <a href="{% url 'search' %}" class="btn btn-primary mt-3">{% trans "Start Coloring Now" %}</a>
             </div>
             <div class="col-md-6 d-none d-md-block">
-                <img src="https://via.placeholder.com/600x400" alt="{% trans 'Kids coloring' %}" class="img-fluid rounded">
+                <img src="{% static 'images/title.webp' %}" alt="{% trans 'Kids coloring' %}" class="img-fluid rounded">
             </div>
         </div>
     </div>
