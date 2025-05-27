@@ -10,8 +10,11 @@ def get_coloring_page_prompt(prompt: str) -> str:
         str: A clean prompt for the image generation
     """
     return _(
-        "Black line drawing of %(prompt)s. "
-        "Black outlines on white background. "
-        "No color, no shading, no text, no background. "
-        "Simple and clear outlines only."
+        "Create a black and white line drawing of %(prompt)s. "
+        "Use clean, continuous black lines on pure white background. "
+        "No color, no shading, no gradients, no textures. "
+        "No background elements, borders, shadows, or drop shadows. "
+        "No text or labels. The image should be a single, clear outline drawing "
+        "suitable for coloring. All lines should be connected and form complete shapes. "
+        "The drawing should be centered and fill most of the frame without touching the edges."
     ) % {'prompt': prompt}
