@@ -25,7 +25,7 @@ from django.utils import timezone
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
 from .models import ColoringPage, create_unique_slug
-from .utils import get_coloring_page_prompt, generate_titles_and_descriptions
+from .utils import get_coloring_page_prompt, generate_titles_and_descriptions, generate_coloring_page_image
 
 
 # Moved to utils.py
@@ -180,39 +180,20 @@ def generate_coloring_page(request):
                 if not description_de:
                     description_de = _('Eine Malvorlage von ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
                 
-                # Generate the image using DALL·E 3 with the original user prompt
-                prompt_text = get_coloring_page_prompt(prompt)
-                
-                response = client.images.generate(
-                    model="dall-e-3",
-                    prompt=prompt_text,
-                    size="1024x1024",
-                    quality="standard",
-                    n=1,
-                    response_format="b64_json"
-                )
-                
-                # Get the base64 image data
-                image_data = response.data[0].b64_json
-                image_bytes = base64.b64decode(image_data)
-                
-                # Create a temporary directory to store the generated files
-                temp_dir = tempfile.mkdtemp()
-                image_name = f"coloring_{uuid.uuid4()}.png"
-                temp_image_path = os.path.join(temp_dir, image_name)
-                
-                # Save the image to a temporary file
-                with open(temp_image_path, 'wb') as f:
-                    f.write(image_bytes)
-                
-                # Generate thumbnail
-                img = Image.open(BytesIO(image_bytes))
-                img.thumbnail((256, 256), Image.LANCZOS)
-                
-                # Save thumbnail to temp file
-                thumb_name = f"thumb_{uuid.uuid4()}.png"
-                temp_thumb_path = os.path.join(temp_dir, thumb_name)
-                img.save(temp_thumb_path, format='PNG')
+                # Generate the image and thumbnail using our utility function
+                try:
+                    result = generate_coloring_page_image(prompt, generate_thumbnail=True)
+                    temp_dir = result['temp_dir']
+                    temp_image_path = result['image_path']
+                    temp_thumb_path = result['thumb_path']
+                except Exception as e:
+                    # Clean up will be handled by the generate_coloring_page_image function
+                    messages.error(request, _('Error generating image: %s') % str(e))
+                    return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
+                        'form': form,
+                        'title': _('Generate New Coloring Page'),
+                        'opts': ColoringPage._meta,
+                    })
                 
                 # Store the temporary file paths and other data in the session
                 request.session['pending_page'] = {
@@ -337,43 +318,11 @@ def confirm_coloring_page(request):
             # Initialize temp_dir at the beginning of the block
             temp_dir = None
             try:
-                # Generate new image using the same prompt
-                client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-                
-                # Generate the image using DALL·E 3 with the user's original prompt
-                prompt_text = get_coloring_page_prompt(prompt)
-                
-                response = client.images.generate(
-                    model="dall-e-3",
-                    prompt=prompt_text,
-                    size="1024x1024",
-                    quality="standard",
-                    n=1,
-                )
-                
-                # Download the generated image
-                image_url = response.data[0].url
-                image_response = requests.get(image_url)
-                image_response.raise_for_status()
-                image_bytes = image_response.content
-                
-                # Create new temp directory
-                temp_dir = tempfile.mkdtemp()
-                image_name = f"coloring_{uuid.uuid4()}.png"
-                temp_image_path = os.path.join(temp_dir, image_name)
-                
-                # Save the main image
-                with open(temp_image_path, 'wb') as f:
-                    f.write(image_bytes)
-                
-                # Generate thumbnail
-                img = Image.open(BytesIO(image_bytes))
-                img.thumbnail((256, 256), Image.LANCZOS)
-                
-                # Save thumbnail to temp file
-                thumb_name = f"thumb_{uuid.uuid4()}.png"
-                temp_thumb_path = os.path.join(temp_dir, thumb_name)
-                img.save(temp_thumb_path, format='PNG')
+                # Generate new image using our utility function
+                result = generate_coloring_page_image(prompt, generate_thumbnail=True)
+                temp_dir = result['temp_dir']
+                temp_image_path = result['image_path']
+                temp_thumb_path = result['thumb_path']
                 
                 # Update the pending page data with new files and updated metadata
                 request.session['pending_page'] = {

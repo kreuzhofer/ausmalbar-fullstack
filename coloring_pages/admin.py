@@ -12,6 +12,7 @@ from openai import OpenAI
 from .models import ColoringPage
 from .forms import ColoringPageForm
 from .views import generate_coloring_page, confirm_coloring_page
+from .utils import generate_coloring_page_image
 
 class ColoringPageAddForm(forms.ModelForm):
     class Meta:
@@ -119,47 +120,32 @@ class ColoringPageAdmin(admin.ModelAdmin):
             
             # Then generate and save the image
             try:
-                # Generate the image using the original prompt
-                from .utils import get_coloring_page_prompt
-                prompt_text = get_coloring_page_prompt(obj.prompt)
+                # Generate the image and thumbnail using our utility function
+                from .utils import generate_coloring_page_image
                 
-                response = client.images.generate(
-                    model="dall-e-3",
-                    prompt=prompt_text,
-                    size="1024x1024",
-                    quality="standard",
-                    n=1,
-                )
-                
-                # Download and save the image
-                image_url = response.data[0].url
-                img_response = requests.get(image_url)
-                img_response.raise_for_status()
-                
-                # Save the image to the model
-                img_io = BytesIO(img_response.content)
-                img_name = f"coloring_page_{obj.id}.png"
-                obj.image.save(img_name, img_io, save=True)
-                
-                # Create and save thumbnail
-                from PIL import Image
-                from io import BytesIO
-                
-                img = Image.open(BytesIO(img_response.content))
-                img.thumbnail((300, 300))
-                
-                thumb_io = BytesIO()
-                img.save(thumb_io, format='PNG')
-                thumb_io.seek(0)
-                
-                thumb_name = f"thumb_{obj.id}.png"
-                obj.thumbnail.save(thumb_name, thumb_io, save=False)
-                
-                # Save again to update the thumbnail
-                obj.save()
-                
-                messages.success(request, _('Coloring page was generated successfully.'))
-                return
+                try:
+                    # Generate the image and thumbnail
+                    result = generate_coloring_page_image(obj.prompt)
+                    
+                    # Save the main image
+                    img_name = f"coloring_page_{obj.id}.png"
+                    obj.image.save(img_name, ContentFile(result['image_bytes']), save=True)
+                    
+                    # Save the thumbnail if it was generated
+                    if result['thumbnail_bytes']:
+                        thumb_name = f"thumb_{obj.id}.png"
+                        obj.thumbnail.save(thumb_name, ContentFile(result['thumbnail_bytes']), save=False)
+                        
+                    # Save the model again to ensure everything is updated
+                    obj.save()
+                    
+                    messages.success(request, _('Coloring page was generated successfully.'))
+                    return
+                    
+                except Exception as e:
+                    # Clean up will be handled by the generate_coloring_page_image function
+                    messages.error(request, _('Error generating image: %s') % str(e))
+                    return
                 
             except Exception as e:
                 messages.error(request, _('Error generating coloring page image: %s') % str(e))

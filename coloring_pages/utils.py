@@ -1,6 +1,13 @@
 from django.utils.translation import gettext_lazy as _
 import openai
 import os
+import base64
+import uuid
+import tempfile
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
+from django.conf import settings
 
 def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
     """Generate English and German titles and descriptions for the coloring page based on the prompt.
@@ -88,3 +95,84 @@ def get_coloring_page_prompt(prompt: str) -> str:
         "If you are asked for example for 'a cat' this means 'one cat' not multiple cats. avoid duplication of objects if not asked for."
         "If the object is likely to have a highly detailed pattern, such as a flower or a leaf or the fur of a pet, do not include it so it can be colored. "
     ) % {'prompt': prompt}
+
+
+def generate_coloring_page_image(prompt, generate_thumbnail=True):
+    """
+    Generate a coloring page image using DALL-E 3 and optionally create a thumbnail.
+    
+    Args:
+        prompt (str): The prompt to generate the image from
+        generate_thumbnail (bool): Whether to generate a thumbnail (default: True)
+        
+    Returns:
+        dict: Dictionary containing:
+            - 'image_bytes': Bytes of the generated image
+            - 'thumbnail_bytes': Bytes of the generated thumbnail (if generate_thumbnail=True)
+            - 'temp_dir': Path to the temporary directory containing the files
+            - 'image_path': Path to the generated image file
+            - 'thumb_path': Path to the generated thumbnail file (if generate_thumbnail=True)
+    """
+    temp_dir = tempfile.mkdtemp()
+    result = {
+        'temp_dir': temp_dir,
+        'image_path': None,
+        'thumb_path': None,
+        'image_bytes': None,
+        'thumbnail_bytes': None
+    }
+    
+    try:
+        # Initialize OpenAI client
+        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        
+        # Generate the image using DALL-E 3
+        prompt_text = get_coloring_page_prompt(prompt)
+        response = client.images.generate(
+            #model="dall-e-3",
+            model="gpt-image-1",
+            prompt=prompt_text,
+            size="1024x1024",
+            quality="medium",
+            n=1,
+            #response_format="b64_json"
+        )
+        
+        # Get the base64 image data
+        image_data = response.data[0].b64_json
+        image_bytes = base64.b64decode(image_data)
+        result['image_bytes'] = image_bytes
+        
+        # Save the image to a temporary file
+        image_name = f"coloring_{uuid.uuid4()}.png"
+        image_path = os.path.join(temp_dir, image_name)
+        with open(image_path, 'wb') as f:
+            f.write(image_bytes)
+        result['image_path'] = image_path
+        
+        # Generate thumbnail if requested
+        if generate_thumbnail:
+            img = Image.open(BytesIO(image_bytes))
+            img.thumbnail((300, 300), Image.LANCZOS)
+            
+            # Save thumbnail to bytes
+            thumb_io = BytesIO()
+            img.save(thumb_io, format='PNG')
+            thumb_bytes = thumb_io.getvalue()
+            result['thumbnail_bytes'] = thumb_bytes
+            
+            # Also save to file
+            thumb_name = f"thumb_{uuid.uuid4()}.png"
+            thumb_path = os.path.join(temp_dir, thumb_name)
+            with open(thumb_path, 'wb') as f:
+                f.write(thumb_bytes)
+            result['thumb_path'] = thumb_path
+        
+        return result
+        
+    except Exception as e:
+        # Clean up temp directory if it exists
+        if os.path.exists(temp_dir):
+            import shutil
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        raise e
