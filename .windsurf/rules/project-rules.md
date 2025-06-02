@@ -1,6 +1,10 @@
-# Windsurf Project Guidelines
+---
+trigger: always_on
+---
 
-This document contains project-specific guidelines for Windsurf to follow when generating or refactoring code. These guidelines supplement the standard coding standards defined in `CODING_STANDARDS.md`.
+# Project Guidelines
+
+This document contains project-specific guidelines to follow when generating or refactoring code. These guidelines supplement the standard coding standards defined in `CODING_STANDARDS.md`.
 
 ## General Guidelines
 
