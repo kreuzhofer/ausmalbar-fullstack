@@ -9,7 +9,7 @@ from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from openai import OpenAI
-from .models import ColoringPage
+from .models import ColoringPage, SearchQuery
 from .forms import ColoringPageForm
 from .views import generate_coloring_page, confirm_coloring_page
 from .utils import generate_coloring_page_image
@@ -263,3 +263,12 @@ class ColoringPageAdmin(admin.ModelAdmin):
 admin.site.site_header = 'Ausmalbar Administration'
 admin.site.site_title = 'Ausmalbar Admin'
 admin.site.index_title = 'Dashboard'
+
+@admin.register(SearchQuery)
+class SearchQueryAdmin(admin.ModelAdmin):
+    list_display = ('query', 'language', 'result_count', 'created_at', 'ip_address')
+    list_filter = ('language', 'created_at')
+    search_fields = ('query', 'ip_address', 'session_key')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+    list_per_page = 20
