@@ -12,5 +12,5 @@ Disallow: /api/
 # Crawl-delay for search engines (1 request per second)
 Crawl-delay: 1
 
-# Sitemap location (use your actual domain)
-Sitemap: https://ausmalbar.com/sitemap.xml
+# Sitemap location (relative URL)
+Sitemap: /sitemap.xml

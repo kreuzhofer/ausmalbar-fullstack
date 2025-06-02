@@ -11,8 +11,14 @@ import os
 from coloring_pages.sitemaps import sitemaps
 from coloring_pages.views import sitemap
 
+# Sitemaps - outside i18n_patterns so they work with any language prefix
+urlpatterns = [
+    path('sitemap.xml', sitemap, name='django.contrib.sitemaps.views.sitemap'),
+    path('sitemap-<section>.xml', sitemap, name='django.contrib.sitemaps.views.sitemap_section'),
+]
+
 # Internationalized URL patterns
-urlpatterns = i18n_patterns(
+urlpatterns += i18n_patterns(
     path('', include(('coloring_pages.urls', 'coloring_pages'), namespace='coloring_pages')),
     prefix_default_language=True
 )
@@ -29,9 +35,6 @@ urlpatterns += [
         'document_root': os.path.join(settings.BASE_DIR, 'static'),
         'path': 'ads.txt',
     }, name='ads_txt'),
-    # Sitemaps - using our custom view that passes the request
-    path('sitemap.xml', sitemap, name='django.contrib.sitemaps.views.sitemap'),
-    path('sitemap_index.xml', sitemap, name='sitemap-index'),
     # Language switcher
     path('i18n/', include('django.conf.urls.i18n')),
 ]
