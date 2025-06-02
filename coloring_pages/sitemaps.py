@@ -2,7 +2,11 @@ from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from django.utils import translation
 from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from .models import ColoringPage
+
+# Get the site URL from settings
+SITE_URL = getattr(settings, 'SITE_URL', 'http://localhost:8000')
 
 
 class StaticViewSitemap(Sitemap):
@@ -25,6 +29,26 @@ class StaticViewSitemap(Sitemap):
         # Use the default language for static pages
         with translation.override(settings.LANGUAGE_CODE):
             return reverse(item, current_app='coloring_pages')
+            
+    def get_urls(self, **kwargs):
+        # Override get_urls to ensure proper URL formatting
+        urls = []
+        for item in self.items():
+            path = self.location(item)
+            # Only prepend SITE_URL if the path is relative
+            if not path.startswith(('http://', 'https://')):
+                loc = f"{SITE_URL.rstrip('/')}{path}"
+            else:
+                loc = path
+            url_info = {
+                'location': loc,
+                'changefreq': self._get('changefreq', None, 'weekly'),
+                'priority': self._get('priority', None, 0.8),
+                'lastmod': None,
+                'alternates': []
+            }
+            urls.append(url_info)
+        return urls
 
 
 class ColoringPageSitemap(Sitemap):
@@ -39,10 +63,7 @@ class ColoringPageSitemap(Sitemap):
         return obj.updated_at
 
     def location(self, obj):
-        # Get the current language
-        current_lang = translation.get_language()
-        
-        # For the location, use the English URL as default
+        # Always use English version as canonical URL
         if obj.seo_url_en:
             return reverse('coloring_pages:detail_en', 
                          kwargs={'seo_url': obj.seo_url_en}, 
@@ -61,33 +82,47 @@ class ColoringPageSitemap(Sitemap):
         # Override to include hreflang links for each URL
         urls = []
         for item in self.paginator.page(page).object_list:
-            loc = self._location(item)
+            path = self.location(item)
+            # Only prepend SITE_URL if the path is relative
+            if not path.startswith(('http://', 'https://')):
+                loc = f"{SITE_URL.rstrip('/')}{path}"
+            else:
+                loc = path
+                
             url_info = {
                 'item': item,
                 'location': loc,
                 'lastmod': item.updated_at,
-                'changefreq': self._get('changefreq', item),
-                'priority': self._get('priority', item, 0.5),
+                'changefreq': self._get('changefreq', item, 'daily'),
+                'priority': self._get('priority', item, 0.9),
                 'alternates': []
             }
             
-            # Add alternate language URLs
+            # Add alternate language URLs with full URLs
             if item.seo_url_en:  # English version
-                en_url = reverse('coloring_pages:detail_en', 
+                en_path = reverse('coloring_pages:detail_en', 
                                kwargs={'seo_url': item.seo_url_en}, 
                                current_app='coloring_pages')
+                if not en_path.startswith(('http://', 'https://')):
+                    en_url = f"{SITE_URL.rstrip('/')}{en_path}"
+                else:
+                    en_url = en_path
                 url_info['alternates'].append({
-                    'lang': 'en',
-                    'url': en_url
+                    'lang_code': 'en',
+                    'location': en_url
                 })
                 
             if item.seo_url_de:  # German version
-                de_url = reverse('coloring_pages:detail_de', 
+                de_path = reverse('coloring_pages:detail_de', 
                                kwargs={'seo_url': item.seo_url_de}, 
                                current_app='coloring_pages')
+                if not de_path.startswith(('http://', 'https://')):
+                    de_url = f"{SITE_URL.rstrip('/')}{de_path}"
+                else:
+                    de_url = de_path
                 url_info['alternates'].append({
-                    'lang': 'de',
-                    'url': de_url
+                    'lang_code': 'de',
+                    'location': de_url
                 })
             
             urls.append(url_info)

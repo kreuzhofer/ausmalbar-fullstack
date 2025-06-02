@@ -69,8 +69,10 @@ INSTALLED_APPS = [
 if DEBUG:
     INSTALLED_APPS += ['debug_toolbar']
 
-# Site ID for Django sites framework
+# Site configuration
 SITE_ID = 1
+# Base URL for sitemap and other absolute URLs
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
