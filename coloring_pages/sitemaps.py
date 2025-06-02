@@ -14,9 +14,15 @@ class StaticViewSitemap(Sitemap):
         # List of all static pages to include in sitemap
         # Each item is a tuple of (view_name, lang_code, alternate_view_name)
         return [
+            # Home pages
             ('coloring_pages:home', 'en', 'coloring_pages:home'),  # English home
             ('coloring_pages:home', 'de', 'coloring_pages:home'),  # German home
-            ('coloring_pages:search', None, None),  # Search handles both languages
+            
+            # Search pages
+            ('coloring_pages:search', 'en', 'coloring_pages:suche'),  # English search
+            ('coloring_pages:suche', 'de', 'coloring_pages:search'),  # German suche
+            
+            # Legal pages
             ('coloring_pages:imprint', 'en', 'coloring_pages:impressum'),  # English imprint
             ('coloring_pages:impressum', 'de', 'coloring_pages:imprint'),  # German impressum
             ('coloring_pages:privacy_policy', 'en', 'coloring_pages:datenschutz'),

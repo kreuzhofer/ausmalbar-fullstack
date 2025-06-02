@@ -10,7 +10,9 @@ app_name = 'coloring_pages'
 
 urlpatterns = [
     path('', views.home, name='home'),
-    path('search/', views.search, name='search'),
+    # Search URLs
+    path('search/', views.search, name='search'),  # English
+    path('suche/', views.search, name='suche'),    # German
     
     # SEO-friendly URLs for coloring pages
     # English version
