@@ -94,35 +94,35 @@
         
         <div class="preview-field">
             <label>{% trans 'Title (English)' %}:</label>
-            <div class="value">{{ page_data.title_en|default:_('(No title)') }}</div>
+            <div class="value">{{ pending_page.title_en|default:_('(No title)') }}</div>
         </div>
         
         <div class="preview-field">
             <label>{% trans 'Description (English)' %}:</label>
-            <div class="value">{{ page_data.description_en|default:_('(No description)') }}</div>
+            <div class="value">{{ pending_page.description_en|default:_('(No description)') }}</div>
         </div>
         
         <div class="preview-field">
             <label>{% trans 'Title (German)' %}:</label>
-            <div class="value">{{ page_data.title_de|default:_('(No title)') }}</div>
+            <div class="value">{{ pending_page.title_de|default:_('(No title)') }}</div>
         </div>
         
         <div class="preview-field">
             <label>{% trans 'Description (German)' %}:</label>
-            <div class="value">{{ page_data.description_de|default:_('(No description)') }}</div>
+            <div class="value">{{ pending_page.description_de|default:_('(No description)') }}</div>
         </div>
         
         <div class="preview-field">
             <label for="prompt">{% trans 'Prompt' %}:</label>
-            <textarea id="prompt" name="prompt" class="form-control" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">{{ page_data.prompt }}</textarea>
+            <textarea id="prompt" name="prompt" class="form-control" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">{{ pending_page.prompt }}</textarea>
             <div class="help">{% trans 'You can modify the prompt before regenerating the image.' %}</div>
         </div>
         
         <div class="preview-field">
             <label>{% trans 'Preview' %}:</label>
             <div class="preview-container">
-                {% if page_data.thumb_data %}
-                    <img src="{{ page_data.thumb_data }}" class="preview-thumbnail" alt="Preview">
+                {% if pending_page.thumb_data %}
+                    <img src="{{ pending_page.thumb_data }}" class="preview-thumbnail" alt="Preview">
                 {% else %}
                     <div class="no-preview">No preview available</div>
                 {% endif %}
@@ -132,7 +132,7 @@
     
     <form method="post" id="confirmation_form">
         {% csrf_token %}
-        <input type="hidden" name="prompt" id="hidden_prompt" value="{{ page_data.prompt }}">
+        <input type="hidden" name="prompt" id="hidden_prompt" value="{{ pending_page.prompt }}">
         <div class="action-buttons">
             <button type="submit" name="action" value="reject" class="btn-reject">
                 {% trans 'Reject & Discard' %}

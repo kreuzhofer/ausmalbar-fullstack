@@ -52,8 +52,8 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Error handlers
-handler404 = 'coloring_pages.views.page_not_found'
-handler500 = 'coloring_pages.views.server_error'
+handler404 = 'coloring_pages.views.errors.page_not_found'
+handler500 = 'coloring_pages.views.errors.server_error'
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

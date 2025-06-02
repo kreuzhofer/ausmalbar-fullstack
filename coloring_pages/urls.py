@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from . import views
 from .views import ImprintView, ColoringPageDetailView
 from .views_legal import PrivacyPolicyView, TermsOfServiceView
+from .views.admin import generate_coloring_page, confirm_coloring_page
 
 app_name = 'coloring_pages'
 
@@ -30,8 +31,8 @@ urlpatterns = [
     path('page/<int:pk>/download/', views.download_image, name='download_image'),
     
     # Admin URLs
-    path('admin/generate/', login_required(views.generate_coloring_page), name='generate_coloring_page'),
-    path('admin/confirm/', login_required(views.confirm_coloring_page), name='confirm_coloring_page'),
+    path('admin/generate/', login_required(generate_coloring_page), name='generate_coloring_page'),
+    path('admin/confirm/', login_required(confirm_coloring_page), name='confirm_coloring_page'),
     
     # Legal pages - English
     path('imprint/', ImprintView.as_view(), name='imprint'),
