@@ -43,10 +43,10 @@
         <form action="{% if request.LANGUAGE_CODE == 'de' %}{% url 'coloring_pages:suche' %}{% else %}{% url 'coloring_pages:search' %}{% endif %}" method="get" class="mb-4">
             <div class="input-group">
                 <input type="text" name="q" class="form-control form-control-lg" 
-                       placeholder="{% trans 'Search for coloring pages...' %}" 
-                       value="{{ query|default:'' }}" aria-label="{% trans 'Search' %}">
+                       placeholder="{% trans 'search_placeholder' %}" 
+                       value="{{ query|default:'' }}" aria-label="{% trans 'search_aria_label' %}">
                 <button class="btn btn-primary btn-lg" type="submit">
-                    <i class="bi bi-search"></i> {% trans 'Search' %}
+                    <i class="bi bi-search"></i> {% trans 'search_button' %}
                 </button>
             </div>
         </form>
@@ -54,7 +54,7 @@
 
     {% if popular_searches %}
     <div class="popular-searches">
-        <h3 class="text-center">{% trans 'Popular Searches' %}</h3>
+        <h3 class="text-center">{% trans 'search_popular_searches' %}</h3>
         <div class="text-center">
             {% for search in popular_searches %}
                 <a href="?q={{ search.query|urlencode }}" class="search-tag">
@@ -69,16 +69,16 @@
         {% if query %}
             {% blocktrans with query=query %}Search results for "{{ query }}"{% endblocktrans %}
         {% else %}
-            {% trans 'All Coloring Pages' %}
+            {% trans 'search_all_pages' %}
         {% endif %}
     </h1>
     
     {% if query %}
         <p class="text-muted mb-4">
-{% blocktrans count counter=page_obj.paginator.count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktrans %}{% trans ' found' %}
+{% blocktrans count counter=page_obj.paginator.count %}{{ counter }} result{% plural %}{{ counter }} results{% endblocktrans %}{% trans 'search_results_found' %}
         </p>
     {% else %}
-        <p class="text-muted mb-4">{% trans 'Browse our collection of coloring pages' %}</p>
+        <p class="text-muted mb-4">{% trans 'search_browse_collection' %}</p>
     {% endif %}
     
     <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-4 g-4">
@@ -88,9 +88,9 @@
         <div class="col-12">
             <div class="alert alert-info">
                 {% if query %}
-{% blocktrans with query=query %}No results found for "{{ query }}"{% endblocktrans %}. {% trans 'Please try a different search term.' %}
+{% blocktrans with query=query %}No results found for "{{ query }}"{% endblocktrans %}. {% trans 'search_try_different_term' %}
                 {% else %}
-                    {% trans 'No coloring pages found.' %}
+                    {% trans 'search_no_pages_found' %}
                 {% endif %}
             </div>
         </div>
@@ -129,7 +129,7 @@
                     <li class="page-item active">
                         <span class="page-link">
                             {{ num }}
-                            <span class="visually-hidden">{% trans 'Current page' %}</span>
+                            <span class="visually-hidden">{% trans 'pagination_current_page' %}</span>
                         </span>
                     </li>
                 {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
@@ -157,11 +157,11 @@
             {% else %}
                 <li class="page-item disabled">
                     <span class="page-link" aria-hidden="true">&raquo;</span>
-                    <span class="visually-hidden">{% trans "Next" %}</span>
+                    <span class="visually-hidden">{% trans 'pagination_next' %}</span>
                 </li>
                 <li class="page-item disabled">
                     <span class="page-link" aria-hidden="true">&raquo;&raquo;</span>
-                    <span class="visually-hidden">{% trans "Last" %}</span>
+                    <span class="visually-hidden">{% trans 'pagination_last' %}</span>
                 </li>
             {% endif %}
         </ul>

@@ -30,7 +30,7 @@ msgid "Confirm Coloring Page Generation"
 msgstr "Ausmalseite-Bestätigung"
 
 msgid "Describe the coloring page you want to create:"
-msgstr "Beschreiben Sie die Ausmalseite, die Sie erstellen möchten:"
+msgstr "Beschreibe die Ausmalseite, die du erstellen möchtest:"
 
 msgid "Error generating coloring page: %(error)s"
 msgstr "Fehler beim Generieren der Ausmalseite: %(error)s"
@@ -39,7 +39,7 @@ msgid "Error generating image: %(error)s"
 msgstr "Fehler beim Erzeugen des Bildes: %(error)s"
 
 msgid "Failed to save the coloring page. Please try again."
-msgstr "Speichern der Ausmalseite fehlgeschlagen. Bitte versuchen Sie es erneut."
+msgstr "Speichern der Ausmalseite fehlgeschlagen. Bitte versuche es noch einmal."
 
 msgid "Generate"
 msgstr "Generieren"
@@ -60,10 +60,10 @@ msgid "No pending coloring page to confirm."
 msgstr "Keine ausstehende Ausmalseite zur Bestätigung vorhanden."
 
 msgid "Please correct the error below."
-msgstr "Bitte korrigieren Sie den folgenden Fehler."
+msgstr "Bitte korrigiere den folgenden Fehler."
 
 msgid "Please correct the errors below."
-msgstr "Bitte korrigieren Sie die folgenden Fehler."
+msgstr "Bitte korrigiere die folgenden Fehler."
 
 msgid "Preview"
 msgstr "Vorschau"
@@ -93,7 +93,7 @@ msgid "Let your creativity flow! 🎨✏️"
 msgstr "Lass deiner Kreativität freien Lauf! 🎨✏️"
 
 msgid "Please enter a prompt"
-msgstr "Bitte geben Sie eine Eingabe ein"
+msgstr "Bitte gib eine Eingabe ein"
 
 # Home page
 msgid "home_page_title"
@@ -148,7 +148,7 @@ msgid "Welcome to Ausmalbar!"
 msgstr "Willkommen bei Ausmalbar.de!"
 
 msgid "Discover and print free coloring pages for kids of all ages."
-msgstr "Entdecken und drucken Sie kostenlose Malvorlagen für Kinder jeden Alters."
+msgstr "Entdecke und drucke kostenlose Malvorlagen für Kinder jeden Alters."
 
 msgid "Search for animals, characters, or themes..."
 msgstr "Suche nach Tieren, Charakteren oder Themen..."
@@ -183,6 +183,44 @@ msgid "Print this page"
 msgstr "Diese Seite drucken"
 
 # Search page
+# Search-related messages
+msgid "search_placeholder"
+msgstr "Nach Ausmalseiten suchen..."
+
+msgid "search_aria_label"
+msgstr "Suche"
+
+msgid "search_button"
+msgstr "Suchen"
+
+msgid "search_popular_searches"
+msgstr "Beliebte Suchanfragen"
+
+msgid "search_all_pages"
+msgstr "Alle Ausmalseiten"
+
+msgid "search_results_found"
+msgstr " gefunden"
+
+msgid "search_browse_collection"
+msgstr "Durchstöbere unsere Sammlung von Ausmalseiten"
+
+msgid "search_try_different_term"
+msgstr "Versuch es mit einem anderen Suchbegriff."
+
+msgid "search_no_pages_found"
+msgstr "Keine Ausmalseiten gefunden."
+
+# Pagination
+msgid "pagination_current_page"
+msgstr "Aktuelle Seite"
+
+msgid "pagination_next"
+msgstr "Nächste"
+
+msgid "pagination_last"
+msgstr "Letzte"
+
 # Search-related messages are defined later in the file
 
 # Pagination
@@ -282,7 +320,7 @@ msgid "Please try a different search term."
 msgstr "Bitte versuchen Sie einen anderen Suchbegriff."
 
 msgid "Browse our collection of coloring pages"
-msgstr "Durchsuchen Sie unsere Sammlung von Malvorlagen"
+msgstr "Durchstöbere unsere Sammlung von Malvorlagen"
 
 msgid "No coloring pages found."
 msgstr "Keine Malvorlagen gefunden."

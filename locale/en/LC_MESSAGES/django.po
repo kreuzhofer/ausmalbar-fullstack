@@ -218,6 +218,43 @@ msgstr " found"
 msgid "No results found for \"%(query)s\""
 msgstr "No results found for \"%(query)s\""
 
+msgid "search_placeholder"
+msgstr "Search for coloring pages..."
+
+msgid "search_aria_label"
+msgstr "Search"
+
+msgid "search_button"
+msgstr "Search"
+
+msgid "search_popular_searches"
+msgstr "Popular Searches"
+
+msgid "search_all_pages"
+msgstr "All Coloring Pages"
+
+msgid "search_results_found"
+msgstr " found"
+
+msgid "search_browse_collection"
+msgstr "Browse our collection of coloring pages"
+
+msgid "search_try_different_term"
+msgstr "Please try a different search term."
+
+msgid "search_no_pages_found"
+msgstr "No coloring pages found."
+
+# Pagination
+msgid "pagination_current_page"
+msgstr "Current page"
+
+msgid "pagination_next"
+msgstr "Next"
+
+msgid "pagination_last"
+msgstr "Last"
+
 msgid "Please try a different search term."
 msgstr "Please try a different search term."
 
