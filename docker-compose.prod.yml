@@ -22,6 +22,7 @@ services:
       - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin}
       - PYTHONUNBUFFERED=1
+      - MIXPANEL_TOKEN=${MIXPANEL_TOKEN}      
     depends_on:
       db:
         condition: service_healthy
