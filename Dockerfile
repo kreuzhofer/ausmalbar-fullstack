@@ -28,4 +28,10 @@ RUN python manage.py collectstatic --noinput
 RUN python manage.py compilemessages
 
 # Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "ausmalbar.wsgi:application"]
+# Development/Debugging version (single worker, single thread)
+# CMD ["gunicorn", "--bind", "0.0.0.0:8000", "ausmalbar.wsgi:application"]
+
+# Production version - optimized for 6-core CPU
+# Workers = (2 x num_cores) + 1 = 13
+# Threads = 2-4 per worker (using 3 as a balanced value)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "13", "--threads", "3", "ausmalbar.wsgi:application"]
