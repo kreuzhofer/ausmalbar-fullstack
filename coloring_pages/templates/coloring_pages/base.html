@@ -48,37 +48,43 @@
         {% endblock %}
     </main>
 
-    <footer class="mt-5">
+    <footer class="bg-light py-5 mt-5">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>{% trans 'base_about_title' %}</h5>
-                    <p>{% trans 'base_about_description' %}</p>
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6 mb-4">
+                            <h5>{% trans 'base_about_title' %}</h5>
+                            <p class="mb-0">{% trans 'base_about_description' %}</p>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <h5>{% trans 'base_language_title' %}</h5>
+                            <div class="d-flex justify-content-center">
+                                <ul class="list-unstyled">
+                                    {% get_current_language as CURRENT_LANGUAGE %}
+                                    {% get_available_languages as LANGUAGES %}
+                                    {% for lang_code, lang_name in LANGUAGES %}
+                                        <li>
+                                            <a href="{% change_lang lang_code %}" class="{% if lang_code == CURRENT_LANGUAGE %}fw-bold{% endif %}" title="{{ lang_name }}">
+                                                {{ lang_name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="footer-links">
+                            <a href="{% url 'coloring_pages:privacy_policy' %}" class="text-decoration-none">{% trans 'base_privacy_policy' %}</a>
+                            <span class="mx-2">|</span>
+                            <a href="{% url 'coloring_pages:terms_of_service' %}" class="text-decoration-none">{% trans 'base_terms_of_service' %}</a>
+                            <span class="mx-2">|</span>
+                            <a href="{% url 'coloring_pages:imprint' %}" class="text-decoration-none">{% trans 'imprint_title' %}</a>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <h5>{% trans 'base_language_title' %}</h5>
-                    <ul class="list-unstyled">
-                        {% get_current_language as CURRENT_LANGUAGE %}
-                        {% get_available_languages as LANGUAGES %}
-                        {% for lang_code, lang_name in LANGUAGES %}
-                            <li>
-                                <a href="{% change_lang lang_code %}" class="{% if lang_code == CURRENT_LANGUAGE %}fw-bold{% endif %}" title="{{ lang_name }}">
-                                    {{ lang_name }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-            <div class="text-center mt-3">
-                <div class="footer-links">
-                    <a href="{% url 'coloring_pages:privacy_policy' %}">{% trans 'base_privacy_policy' %}</a>
-                    <span class="mx-2">|</span>
-                    <a href="{% url 'coloring_pages:terms_of_service' %}">{% trans 'base_terms_of_service' %}</a>
-                    <span class="mx-2">|</span>
-                    <a href="{% url 'coloring_pages:imprint' %}">{% trans 'imprint_title' %}</a>
-                </div>
-                <p class="mb-0 mt-2">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
             </div>
         </div>
     </footer>
