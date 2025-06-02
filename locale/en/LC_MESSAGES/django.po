@@ -104,7 +104,7 @@ msgid "home_page_title"
 msgstr "Free Coloring Pages for Kids - Ausmalbar"
 
 msgid "home_welcome_title"
-msgstr "Welcome to Ausmalbar!"
+msgstr "Welcome to Ausmalbar.de!"
 
 msgid "home_welcome_subtitle"
 msgstr "Discover and print free coloring pages for kids of all ages."

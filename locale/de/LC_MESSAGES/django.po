@@ -100,7 +100,7 @@ msgid "home_page_title"
 msgstr "Kostenlose Malvorlagen für Kinder - Ausmalbar"
 
 msgid "home_welcome_title"
-msgstr "Willkommen bei Ausmalbar!"
+msgstr "Willkommen bei Ausmalbar.de!"
 
 msgid "home_welcome_subtitle"
 msgstr "Entdecke unsere große Auswahl an kostenlosen Malvorlagen für Kinder jeden Alters."
