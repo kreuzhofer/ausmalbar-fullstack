@@ -82,6 +82,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'ausmalbar.middleware.MixpanelTrackingMiddleware',  # Server-side Mixpanel tracking
     'coloring_pages.middleware.DomainLanguageRedirectMiddleware',  # Domain-based language redirect
 ]
 
@@ -98,6 +99,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ausmalbar.context_processors.mixpanel_tracker',
                 'coloring_pages.context_processors.i18n',
             ],
         },
