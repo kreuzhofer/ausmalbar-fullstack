@@ -61,6 +61,7 @@ This document contains project-specific guidelines to follow when generating or 
 2. **Docker Compose**: Use the defined services in `docker-compose.yml`
 3. **Environment Variables**: Use environment variables for configuration, never hardcode sensitive information
 4. **Dependencies**: Add new Python dependencies to `requirements.txt` or `requirements-dev.txt`
+5. This project is using ONLY PostgreSQL. DO NOT TRY to connect to a SQLite database for any reason.
 
 ## Security Guidelines
 
