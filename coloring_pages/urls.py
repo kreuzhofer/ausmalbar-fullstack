@@ -2,18 +2,24 @@ from django.urls import path
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
 from django.utils.translation import gettext_lazy as _
-from . import views
-from .views import ImprintView, ColoringPageDetailView
-from .views_legal import PrivacyPolicyView, TermsOfServiceView
-from .views.admin import generate_coloring_page, confirm_coloring_page
+
+# Import views from their respective modules
+from .views.home import home
+from .views.search import search
+from .views.detail import page_detail, download_image
+from .views.views_class_based import ColoringPageDetailView, ImprintView
+from .views.views_legal import PrivacyPolicyView, TermsOfServiceView
+from .views.admin.coloring_pages import generate_coloring_page, confirm_coloring_page
 
 app_name = 'coloring_pages'
 
 urlpatterns = [
-    path('', views.home, name='home'),
+    # Home page
+    path('', home, name='home'),
+    
     # Search URLs
-    path('search/', views.search, name='search'),  # English
-    path('suche/', views.search, name='suche'),    # German
+    path('search/', search, name='search'),  # English
+    path('suche/', search, name='suche'),    # German
     
     # SEO-friendly URLs for coloring pages
     # English version
@@ -27,8 +33,8 @@ urlpatterns = [
          name='detail_de'),
     
     # Keep the old URL pattern for backward compatibility
-    path('page/<int:pk>/', views.page_detail, name='page_detail'),
-    path('page/<int:pk>/download/', views.download_image, name='download_image'),
+    path('page/<int:pk>/', page_detail, name='page_detail'),
+    path('page/<int:pk>/download/', download_image, name='download_image'),
     
     # Admin URLs
     path('admin/generate/', login_required(generate_coloring_page), name='generate_coloring_page'),

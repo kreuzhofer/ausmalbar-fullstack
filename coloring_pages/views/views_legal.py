@@ -1,6 +1,7 @@
 """
 Legal views for the coloring pages application.
 """
+from datetime import datetime
 from django.views.generic import TemplateView
 from django.utils.translation import gettext_lazy as _
 
@@ -14,7 +15,7 @@ class PrivacyPolicyView(TemplateView):
         context = super().get_context_data(**kwargs)
         context.update({
             'title': _('Privacy Policy'),
-            'current_year': self.request.site.settings.CURRENT_YEAR,
+            'current_year': datetime.now().year,
         })
         return context
 
@@ -29,6 +30,6 @@ class TermsOfServiceView(TemplateView):
         context = super().get_context_data(**kwargs)
         context.update({
             'title': _('Terms of Service'),
-            'current_year': self.request.site.settings.CURRENT_YEAR,
+            'current_year': datetime.now().year,
         })
         return context
