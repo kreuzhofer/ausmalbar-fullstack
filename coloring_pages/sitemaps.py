@@ -27,26 +27,34 @@ class StaticViewSitemap(Sitemap):
         with translation.override(settings.LANGUAGE_CODE):
             return reverse(item, current_app='coloring_pages')
             
-    def get_urls(self, page=1, site=None, protocol=None):
+    def get_urls(self, page=1, site=None, protocol=None, domain=None):
         # Override to include proper domain from the request
         urls = []
         protocol = protocol or 'http'
-        domain = None
         
-        # Try to get the current site domain
-        try:
-            if site is None:
-                site = get_current_site(None)
-            domain = site.domain
-        except:
-            domain = 'localhost:8000'  # Fallback if site framework not properly set up
-            
+        # Get domain from request if available
+        request = getattr(self, '_request', None)
+        if request is not None:
+            domain = request.get_host()
+            protocol = 'https' if request.is_secure() else 'http'
+        
+        # Fallback to site framework if no request
+        if domain is None:
+            try:
+                if site is None:
+                    site = get_current_site(None)
+                domain = site.domain
+            except:
+                domain = 'localhost:8000'  # Final fallback
+        
         for item in self.items():
             path = self.location(item)
             
             # Build the full URL
             if not path.startswith(('http://', 'https://')):
-                loc = f"{protocol}://{domain.rstrip('/')}{path}"
+                # Ensure domain doesn't have protocol
+                clean_domain = domain.replace('http://', '').replace('https://', '').rstrip('/')
+                loc = f"{protocol}://{clean_domain}{path}"
             else:
                 loc = path
                 
@@ -89,26 +97,35 @@ class ColoringPageSitemap(Sitemap):
                      kwargs={'pk': obj.pk}, 
                      current_app='coloring_pages')
 
-    def get_urls(self, page=1, site=None, protocol=None):
+    def get_urls(self, page=1, site=None, protocol=None, domain=None):
         # Override to include hreflang links for each URL
         urls = []
         protocol = protocol or 'http'
-        domain = None
         
-        # Try to get the current site domain
-        try:
-            if site is None:
-                site = get_current_site(None)
-            domain = site.domain
-        except:
-            domain = 'localhost:8000'  # Fallback if site framework not properly set up
-            
+        # Get domain from request if available
+        request = getattr(self, '_request', None)
+        if request is not None:
+            domain = request.get_host()
+            protocol = 'https' if request.is_secure() else 'http'
+        
+        # Fallback to site framework if no request
+        if domain is None:
+            try:
+                if site is None:
+                    site = get_current_site(None)
+                domain = site.domain
+            except:
+                domain = 'localhost:8000'  # Final fallback
+        
+        # Clean up the domain
+        clean_domain = domain.replace('http://', '').replace('https://', '').rstrip('/')
+        
         for item in self.paginator.page(page).object_list:
             path = self.location(item)
             
             # Build the full URL
             if not path.startswith(('http://', 'https://')):
-                loc = f"{protocol}://{domain.rstrip('/')}{path}"
+                loc = f"{protocol}://{clean_domain}{path}"
             else:
                 loc = path
                 
@@ -127,7 +144,7 @@ class ColoringPageSitemap(Sitemap):
                                kwargs={'seo_url': item.seo_url_en}, 
                                current_app='coloring_pages')
                 if not en_path.startswith(('http://', 'https://')):
-                    en_url = f"{protocol}://{domain.rstrip('/')}{en_path}"
+                    en_url = f"{protocol}://{clean_domain}{en_path}"
                 else:
                     en_url = en_path
                 url_info['alternates'].append({
@@ -140,7 +157,7 @@ class ColoringPageSitemap(Sitemap):
                                kwargs={'seo_url': item.seo_url_de}, 
                                current_app='coloring_pages')
                 if not de_path.startswith(('http://', 'https://')):
-                    de_url = f"{protocol}://{domain.rstrip('/')}{de_path}"
+                    de_url = f"{protocol}://{clean_domain}{de_path}"
                 else:
                     de_url = de_path
                 url_info['alternates'].append({

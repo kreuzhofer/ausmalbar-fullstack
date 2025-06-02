@@ -4,12 +4,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls import handler404, handler500
 from django.views.generic import TemplateView
-from django.contrib.sitemaps.views import sitemap
 from django.conf.urls.i18n import i18n_patterns
 from django.views.static import serve
 import os
 
 from coloring_pages.sitemaps import sitemaps
+from coloring_pages.views import sitemap
 
 # Internationalized URL patterns
 urlpatterns = i18n_patterns(
@@ -29,9 +29,9 @@ urlpatterns += [
         'document_root': os.path.join(settings.BASE_DIR, 'static'),
         'path': 'ads.txt',
     }, name='ads_txt'),
-    # Sitemaps
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    path('sitemap_index.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap-index'),
+    # Sitemaps - using our custom view that passes the request
+    path('sitemap.xml', sitemap, name='django.contrib.sitemaps.views.sitemap'),
+    path('sitemap_index.xml', sitemap, name='sitemap-index'),
     # Language switcher
     path('i18n/', include('django.conf.urls.i18n')),
 ]
