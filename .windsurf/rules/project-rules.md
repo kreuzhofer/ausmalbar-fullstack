@@ -43,6 +43,11 @@ This document contains project-specific guidelines to follow when generating or 
 - Use `clean_<fieldname>` for field-specific validation
 - Use `clean()` for cross-field validation
 
+## Internationalization
+- always use prefixed translation identifiers based on the current file and context like imprint_ or home_.
+- Never use the original text as language identifier. If you encounter such mistakes, offer to fix those issues in a refactoring step.
+- Always create entries in the translation files for all languages (currently de/en) when introducing new translation ids. Don't introduce new languages besides those into the system unless explicitely asked to do so.
+
 ## Refactoring Guidelines
 
 1. **Backward Compatibility**: Ensure changes don't break existing functionality
