@@ -17,8 +17,8 @@ class StaticViewSitemap(Sitemap):
             ('coloring_pages:home', 'en', 'coloring_pages:home'),  # English home
             ('coloring_pages:home', 'de', 'coloring_pages:home'),  # German home
             ('coloring_pages:search', None, None),  # Search handles both languages
-            ('coloring_pages:imprint', 'en', 'coloring_pages:imprint'),
-            ('coloring_pages:imprint', 'de', 'coloring_pages:imprint'),
+            ('coloring_pages:imprint', 'en', 'coloring_pages:impressum'),  # English imprint
+            ('coloring_pages:impressum', 'de', 'coloring_pages:imprint'),  # German impressum
             ('coloring_pages:privacy_policy', 'en', 'coloring_pages:datenschutz'),
             ('coloring_pages:datenschutz', 'de', 'coloring_pages:privacy_policy'),
             ('coloring_pages:terms_of_service', 'en', 'coloring_pages:nutzungsbedingungen'),

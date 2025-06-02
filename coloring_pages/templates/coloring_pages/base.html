@@ -80,7 +80,11 @@
                             <span class="mx-2">|</span>
                             <a href="{% url 'coloring_pages:terms_of_service' %}" class="text-decoration-none">{% trans 'base_terms_of_service' %}</a>
                             <span class="mx-2">|</span>
-                            <a href="{% url 'coloring_pages:imprint' %}" class="text-decoration-none">{% trans 'imprint_title' %}</a>
+                            {% if request.LANGUAGE_CODE == 'de' %}
+                                <a href="{% url 'coloring_pages:impressum' %}" class="text-decoration-none">{% trans 'imprint_title' %}</a>
+                            {% else %}
+                                <a href="{% url 'coloring_pages:imprint' %}" class="text-decoration-none">{% trans 'imprint_title' %}</a>
+                            {% endif %}
                         </div>
                         <p class="mb-0 mt-2 text-muted">&copy; {% now "Y" %} {% trans 'base_copyright' %}</p>
                     </div>

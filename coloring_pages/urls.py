@@ -31,8 +31,12 @@ urlpatterns = [
     path('admin/generate/', login_required(views.generate_coloring_page), name='generate_coloring_page'),
     path('admin/confirm/', login_required(views.confirm_coloring_page), name='confirm_coloring_page'),
     
-    # Legal pages
+    # Legal pages - English
     path('imprint/', ImprintView.as_view(), name='imprint'),
+    # Legal pages - German
+    path('impressum/', ImprintView.as_view(), name='impressum'),
+    
+    # Privacy policy and terms
     path('privacy-policy/', PrivacyPolicyView.as_view(), name='privacy_policy'),
     path('datenschutzerklaerung/', PrivacyPolicyView.as_view(), name='datenschutz'),
     path('terms-of-service/', TermsOfServiceView.as_view(), name='terms_of_service'),
