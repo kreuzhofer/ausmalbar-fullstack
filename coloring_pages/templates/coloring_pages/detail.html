@@ -165,8 +165,10 @@
         
         <div class="page-info mb-5">
             <h1 class="mb-4">{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}</h1>
-            {% if page.description %}
-                <p class="lead">{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de }}{% else %}{{ page.description_en }}{% endif %}</p>
+            {% if request.LANGUAGE_CODE == 'de' and page.description_de %}
+                <p class="lead">{{ page.description_de }}</p>
+            {% elif page.description_en %}
+                <p class="lead">{{ page.description_en }}</p>
             {% endif %}
             <div class="text-muted">
                 <small>{% trans 'detail_added_on' %} {{ page.created_at|date:"F j, Y" }}</small>
