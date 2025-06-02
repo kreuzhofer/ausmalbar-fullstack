@@ -226,3 +226,6 @@ LOGIN_URL = '/admin/login/'
 # Email settings (for error reporting)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
 DEFAULT_FROM_EMAIL = 'noreply@ausmalbar.com'
+
+# Mixpanel settings
+MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN')
