@@ -24,7 +24,7 @@ from PIL import Image
 from django.utils import timezone
 
 from .forms import ColoringPageForm, GenerateColoringPageForm
-from .models import ColoringPage, create_unique_slug
+from .models import ColoringPage, SearchQuery, create_unique_slug
 from .utils import get_coloring_page_prompt, generate_titles_and_descriptions, generate_coloring_page_image
 
 
@@ -35,7 +35,10 @@ def home(request):
     return render(request, 'coloring_pages/home.html', {'latest_pages': latest_pages})
 
 def search(request):
-    query = request.GET.get('q', '')
+    """
+    Search for coloring pages with tracking of search queries.
+    """
+    query = request.GET.get('q', '').strip()
     
     # Search in both English and German fields
     if query:
@@ -46,20 +49,45 @@ def search(request):
             Q(description_de__icontains=query) |
             Q(prompt__icontains=query)
         ).distinct()
+        
+        # Track search query if not a duplicate
+        if not SearchQuery.is_duplicate_search(request, query):
+            SearchQuery.create_from_request(request, query, pages.count())
     else:
         pages = ColoringPage.objects.all()
     
     # Order by most recent first
     pages = pages.order_by('-created_at')
     
-    paginator = Paginator(pages, 8)
+    # Pagination
+    paginator = Paginator(pages, 8)  # 8 items per page
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
-    return render(request, 'coloring_pages/search.html', {
+    # Get popular searches for the sidebar (only show on empty search)
+    popular_searches = []
+    if not query:
+        popular_searches = SearchQuery.get_popular_searches(days=30, limit=5)
+    
+    context = {
         'query': query,
         'page_obj': page_obj,
-    })
+        'popular_searches': popular_searches,
+        'is_search': bool(query),
+    }
+    
+    # Store current search in session for back navigation
+    if query:
+        if not request.session.session_key:
+            request.session.create()
+            
+        request.session['last_search'] = {
+            'query': query,
+            'result_count': pages.count(),
+            'timestamp': timezone.now().isoformat()
+        }
+    
+    return render(request, 'coloring_pages/search.html', context)
 
 def page_detail(request, pk):
     """

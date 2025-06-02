@@ -4,15 +4,35 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.text import slugify
-from django.utils.translation import get_language
+from django.utils.translation import get_language, get_language_from_request
 from django.urls import reverse
+from django.db.models import Count, F, Q
+from django.contrib.sessions.models import Session
+from django.utils.http import urlencode
 from PIL import Image
 import io
 import os
 import uuid
 import re
+import json
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+
+# GeoIP2 is optional
+try:
+    from django.contrib.gis.geoip2 import GeoIP2
+    from django.contrib.gis.geoip2 import GeoIP2Exception
+    
+    try:
+        geoip = GeoIP2()
+        GEOIP_AVAILABLE = True
+    except (ImportError, OSError, GeoIP2Exception):
+        geoip = None
+        GEOIP_AVAILABLE = False
+except (ImportError, OSError):
+    GeoIP2 = None
+    geoip = None
+    GEOIP_AVAILABLE = False
 
 def create_unique_slug(model, field_value, field_name, slug_field_name):
     """
@@ -174,3 +194,121 @@ class ColoringPage(models.Model):
                     os.rmdir(thumbnail_dir)
         except (ValueError, OSError) as e:
             print(f"Error deleting thumbnail file {thumbnail_path}: {e}")
+
+
+class SearchQuery(models.Model):
+    """
+    Tracks search queries and their results for analytics.
+    """
+    # Search information
+    query = models.CharField(max_length=255, db_index=True)
+    result_count = models.PositiveIntegerField(default=0)
+    
+    # User and session information
+    session_key = models.CharField(max_length=40, db_index=True, blank=True, null=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    
+    # Context
+    language = models.CharField(max_length=10, default='en')
+    referrer = models.URLField(max_length=500, blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Search Query'
+        verbose_name_plural = 'Search Queries'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['query', 'created_at']),
+            models.Index(fields=['session_key', 'created_at']),
+            models.Index(fields=['ip_address', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f'"{self.query}" - {self.result_count} results ({self.created_at})'
+    
+    @classmethod
+    def create_from_request(cls, request, query, result_count):
+        """
+        Create a new search query record from a request object.
+        """
+        if not query or not query.strip():
+            return None
+            
+        # Get client IP
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0]
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+        
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        
+        # Create the search query
+        search_query = cls(
+            query=query.strip().lower(),
+            result_count=result_count,
+            session_key=request.session.session_key,
+            ip_address=ip_address,
+            language=get_language_from_request(request),
+            referrer=request.META.get('HTTP_REFERER', None)
+        )
+        search_query.save()
+        
+        # Store in session to prevent duplicate tracking
+        search_key = f'search_{query.strip().lower()}'
+        request.session[search_key] = timezone.now().isoformat()
+        request.session.modified = True
+            
+        return search_query
+    
+    @classmethod
+    def is_duplicate_search(cls, request, query):
+        """
+        Check if this search has already been tracked in the current session.
+        """
+        if not query or not query.strip():
+            return True
+            
+        search_key = f'search_{query.strip().lower()}'
+        last_search = request.session.get(search_key)
+        
+        if last_search:
+            try:
+                last_search_time = timezone.datetime.fromisoformat(last_search)
+                time_since = timezone.now() - last_search_time
+                if time_since.total_seconds() < 3600:  # 1 hour window
+                    return True
+            except (ValueError, TypeError):
+                pass
+                
+        return False
+    
+    @classmethod
+    def get_popular_searches(cls, days=30, limit=10):
+        """
+        Get the most popular search queries in the last N days.
+        """
+        since = timezone.now() - timezone.timedelta(days=days)
+        return cls.objects.filter(
+            created_at__gte=since
+        ).values('query').annotate(
+            search_count=Count('id'),
+            avg_results=Count('result_count')
+        ).order_by('-search_count')[:limit]
+    
+    def get_country(self):
+        """
+        Get the country code for the IP address if GeoIP is available.
+        """
+        if not self.ip_address or not GEOIP_AVAILABLE:
+            return None
+            
+        try:
+            return GeoIP2().country_code(self.ip_address)
+        except Exception:
+            return None
