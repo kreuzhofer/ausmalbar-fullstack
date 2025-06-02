@@ -9,6 +9,7 @@ from io import BytesIO
 from django.views.generic import TemplateView, DetailView
 from django.views.generic.base import ContextMixin, TemplateResponseMixin, View
 from django.contrib import messages
+from django.utils.translation import get_language
 from django.db.models import Q
 from django.db.models.fields.files import ImageFieldFile
 from django.core.files.base import ContentFile
@@ -67,7 +68,12 @@ def search(request):
     # Get popular searches for the sidebar (only show on empty search)
     popular_searches = []
     if not query:
-        popular_searches = SearchQuery.get_popular_searches(days=30, limit=5)
+        current_language = get_language() or 'en'
+        popular_searches = SearchQuery.get_popular_searches(
+            days=30, 
+            limit=5,
+            language=current_language  # Only show popular searches in the current language
+        )
     
     context = {
         'query': query,
@@ -84,7 +90,8 @@ def search(request):
         request.session['last_search'] = {
             'query': query,
             'result_count': pages.count(),
-            'timestamp': timezone.now().isoformat()
+            'timestamp': timezone.now().isoformat(),
+            'language': get_language() or 'en'  # Store the language with the search
         }
     
     return render(request, 'coloring_pages/search.html', context)

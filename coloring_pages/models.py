@@ -6,7 +6,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.utils.text import slugify
 from django.utils.translation import get_language, get_language_from_request
 from django.urls import reverse
-from django.db.models import Count, F, Q
+from django.db.models import Avg, Count, F, Max, Q
 from django.contrib.sessions.models import Session
 from django.utils.http import urlencode
 from PIL import Image
@@ -203,16 +203,12 @@ class SearchQuery(models.Model):
     # Search information
     query = models.CharField(max_length=255, db_index=True)
     result_count = models.PositiveIntegerField(default=0)
-    
-    # User and session information
     session_key = models.CharField(max_length=40, db_index=True, blank=True, null=True)
     ip_address = models.GenericIPAddressField(blank=True, null=True)
-    
-    # Context
     language = models.CharField(max_length=10, default='en')
     referrer = models.URLField(max_length=500, blank=True, null=True)
-    
-    # Timestamps
+    user_agent = models.CharField(max_length=500, blank=True, null=True)
+    referrer_url = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -232,54 +228,50 @@ class SearchQuery(models.Model):
     @classmethod
     def create_from_request(cls, request, query, result_count):
         """
-        Create a new search query record from a request object.
+        Create a new search query record from a request.
         """
-        if not query or not query.strip():
-            return None
-            
-        # Get client IP
+        # Get client IP address
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            ip_address = x_forwarded_for.split(',')[0]
+            ip = x_forwarded_for.split(',')[0]
         else:
-            ip_address = request.META.get('REMOTE_ADDR')
-        
-        # Ensure session exists
-        if not request.session.session_key:
-            request.session.create()
-        
-        # Create the search query
-        search_query = cls(
-            query=query.strip().lower(),
-            result_count=result_count,
-            session_key=request.session.session_key,
-            ip_address=ip_address,
-            language=get_language_from_request(request),
-            referrer=request.META.get('HTTP_REFERER', None)
-        )
-        search_query.save()
-        
-        # Store in session to prevent duplicate tracking
-        search_key = f'search_{query.strip().lower()}'
-        request.session[search_key] = timezone.now().isoformat()
-        request.session.modified = True
+            ip = request.META.get('REMOTE_ADDR')
             
-        return search_query
+        # Get user agent
+        user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]  # Limit length to prevent DB errors
+        
+        # Get referrer URL
+        referrer = request.META.get('HTTP_REFERER', '')[:500]  # Limit length
+        
+        # Get current language from request or default to 'en'
+        language = get_language() or 'en'
+        
+        # Create and return the search query
+        return cls.objects.create(
+            query=query,
+            result_count=result_count,
+            session_key=request.session.session_key or '',
+            ip_address=ip or '',
+            user_agent=user_agent,
+            referrer_url=referrer,
+            language=language
+        )
     
     @classmethod
     def is_duplicate_search(cls, request, query):
         """
-        Check if this search has already been tracked in the current session.
+        Check if this search is a duplicate from the same session within a short time window.
         """
-        if not query or not query.strip():
-            return True
+        if not request.session.session_key or not query:
+            return False
             
-        search_key = f'search_{query.strip().lower()}'
-        last_search = request.session.get(search_key)
+        # Check if this exact search was performed recently in the same session and language
+        last_search = request.session.get('last_search')
+        current_language = get_language() or 'en'
         
-        if last_search:
+        if last_search and last_search.get('query') == query and last_search.get('language') == current_language:
             try:
-                last_search_time = timezone.datetime.fromisoformat(last_search)
+                last_search_time = timezone.datetime.fromisoformat(last_search.get('timestamp', ''))
                 time_since = timezone.now() - last_search_time
                 if time_since.total_seconds() < 3600:  # 1 hour window
                     return True
@@ -289,17 +281,26 @@ class SearchQuery(models.Model):
         return False
     
     @classmethod
-    def get_popular_searches(cls, days=30, limit=10):
+    def get_popular_searches(cls, days=30, limit=10, language=None):
         """
-        Get the most popular search queries in the last N days.
+        Get the most popular search queries in the last N days that returned at least 1 result.
+        If language is provided, only return searches from that language.
         """
         since = timezone.now() - timezone.timedelta(days=days)
-        return cls.objects.filter(
-            created_at__gte=since
-        ).values('query').annotate(
+        queryset = cls.objects.filter(
+            created_at__gte=since,
+            result_count__gt=0  # Only include searches with results
+        )
+        
+        # Filter by language if specified
+        if language:
+            queryset = queryset.filter(language=language)
+            
+        return queryset.values('query').annotate(
             search_count=Count('id'),
-            avg_results=Count('result_count')
-        ).order_by('-search_count')[:limit]
+            avg_results=Avg('result_count'),
+            last_searched=Max('created_at')
+        ).order_by('-search_count', '-last_searched')[:limit]
     
     def get_country(self):
         """
