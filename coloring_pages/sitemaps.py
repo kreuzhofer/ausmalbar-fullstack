@@ -146,7 +146,20 @@ class ColoringPageSitemap(Sitemap):
         clean_domain = domain.replace('http://', '').replace('https://', '').rstrip('/')
         
         for item in self.paginator.page(page).object_list:
-            path = self.location(item)
+            # Get the canonical URL (English version if available, otherwise German)
+            if item.seo_url_en:
+                path = reverse('coloring_pages:detail_en', 
+                             kwargs={'seo_url': item.seo_url_en}, 
+                             current_app='coloring_pages')
+            elif item.seo_url_de:
+                path = reverse('coloring_pages:detail_de', 
+                             kwargs={'seo_url': item.seo_url_de}, 
+                             current_app='coloring_pages')
+            else:
+                # Fallback to ID-based URL if no SEO URLs are available
+                path = reverse('coloring_pages:page_detail', 
+                             kwargs={'pk': item.pk}, 
+                             current_app='coloring_pages')
             
             # Build the full URL
             if not path.startswith(('http://', 'https://')):
@@ -163,32 +176,34 @@ class ColoringPageSitemap(Sitemap):
                 'alternates': []
             }
             
-            # Add alternate language URLs with full URLs
+            # Add alternate language URLs with full URLs and correct language prefixes
             if item.seo_url_en:  # English version
-                en_path = reverse('coloring_pages:detail_en', 
-                               kwargs={'seo_url': item.seo_url_en}, 
-                               current_app='coloring_pages')
-                if not en_path.startswith(('http://', 'https://')):
-                    en_url = f"{protocol}://{clean_domain}{en_path}"
-                else:
-                    en_url = en_path
-                url_info['alternates'].append({
-                    'lang_code': 'en',
-                    'location': en_url
-                })
+                with translation.override('en'):
+                    en_path = reverse('coloring_pages:detail_en', 
+                                   kwargs={'seo_url': item.seo_url_en}, 
+                                   current_app='coloring_pages')
+                    if not en_path.startswith(('http://', 'https://')):
+                        en_url = f"{protocol}://{clean_domain}{en_path}"
+                    else:
+                        en_url = en_path
+                    url_info['alternates'].append({
+                        'lang_code': 'en',
+                        'location': en_url
+                    })
                 
             if item.seo_url_de:  # German version
-                de_path = reverse('coloring_pages:detail_de', 
-                               kwargs={'seo_url': item.seo_url_de}, 
-                               current_app='coloring_pages')
-                if not de_path.startswith(('http://', 'https://')):
-                    de_url = f"{protocol}://{clean_domain}{de_path}"
-                else:
-                    de_url = de_path
-                url_info['alternates'].append({
-                    'lang_code': 'de',
-                    'location': de_url
-                })
+                with translation.override('de'):
+                    de_path = reverse('coloring_pages:detail_de', 
+                                   kwargs={'seo_url': item.seo_url_de}, 
+                                   current_app='coloring_pages')
+                    if not de_path.startswith(('http://', 'https://')):
+                        de_url = f"{protocol}://{clean_domain}{de_path}"
+                    else:
+                        de_url = de_path
+                    url_info['alternates'].append({
+                        'lang_code': 'de',
+                        'location': de_url
+                    })
             
             urls.append(url_info)
         
