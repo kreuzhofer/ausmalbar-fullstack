@@ -12,20 +12,27 @@ class StaticViewSitemap(Sitemap):
 
     def items(self):
         # List of all static pages to include in sitemap
+        # Each item is a tuple of (view_name, lang_code, alternate_view_name)
         return [
-            'coloring_pages:home',
-            'coloring_pages:search',
-            'coloring_pages:imprint',
-            'coloring_pages:privacy_policy',
-            'coloring_pages:datenschutz',
-            'coloring_pages:terms_of_service',
-            'coloring_pages:nutzungsbedingungen',
+            ('coloring_pages:home', 'en', 'coloring_pages:home'),  # English home
+            ('coloring_pages:home', 'de', 'coloring_pages:home'),  # German home
+            ('coloring_pages:search', None, None),  # Search handles both languages
+            ('coloring_pages:imprint', 'en', 'coloring_pages:imprint'),
+            ('coloring_pages:imprint', 'de', 'coloring_pages:imprint'),
+            ('coloring_pages:privacy_policy', 'en', 'coloring_pages:datenschutz'),
+            ('coloring_pages:datenschutz', 'de', 'coloring_pages:privacy_policy'),
+            ('coloring_pages:terms_of_service', 'en', 'coloring_pages:nutzungsbedingungen'),
+            ('coloring_pages:nutzungsbedingungen', 'de', 'coloring_pages:terms_of_service'),
         ]
 
     def location(self, item):
-        # Use the default language for static pages
-        with translation.override(settings.LANGUAGE_CODE):
-            return reverse(item, current_app='coloring_pages')
+        view_name, lang_code, _ = item
+        # Use the specified language for the URL
+        if lang_code:
+            with translation.override(lang_code):
+                return reverse(view_name, current_app='coloring_pages')
+        # For None lang_code, let the view handle language detection
+        return reverse(view_name, current_app='coloring_pages')
             
     def get_urls(self, page=1, site=None, protocol=None, domain=None):
         # Override to include proper domain from the request
@@ -58,12 +65,30 @@ class StaticViewSitemap(Sitemap):
             else:
                 loc = path
                 
+            # Add alternate language URLs for static pages
+            alternates = []
+            view_name, current_lang, alternate_view_name = item
+            
+            # Only add alternates for pages that have language-specific versions
+            if current_lang and alternate_view_name:
+                # Determine the alternate language code
+                alt_lang = 'de' if current_lang == 'en' else 'en'
+                
+                # Generate the alternate URL
+                with translation.override(alt_lang):
+                    alt_path = reverse(alternate_view_name, current_app='coloring_pages')
+                    if not alt_path.startswith(('http://', 'https://')):
+                        alt_url = f"{protocol}://{clean_domain}{alt_path}"
+                    else:
+                        alt_url = alt_path
+                    alternates.append({'lang_code': alt_lang, 'location': alt_url})
+            
             url_info = {
                 'location': loc,
                 'changefreq': self._get('changefreq', None, 'weekly'),
                 'priority': self._get('priority', None, 0.8),
                 'lastmod': None,
-                'alternates': []
+                'alternates': alternates
             }
             urls.append(url_info)
             
