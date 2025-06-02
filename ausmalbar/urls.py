@@ -29,8 +29,9 @@ urlpatterns += [
         'document_root': os.path.join(settings.BASE_DIR, 'static'),
         'path': 'ads.txt',
     }, name='ads_txt'),
-    # Sitemap
+    # Sitemaps
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('sitemap_index.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap-index'),
     # Language switcher
     path('i18n/', include('django.conf.urls.i18n')),
 ]
