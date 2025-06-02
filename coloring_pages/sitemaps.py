@@ -1,12 +1,9 @@
 from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
-from django.utils import translation
 from django.conf import settings
+from django.utils import translation
 from django.contrib.sites.shortcuts import get_current_site
 from .models import ColoringPage
-
-# Get the site URL from settings
-SITE_URL = getattr(settings, 'SITE_URL', 'http://localhost:8000')
 
 
 class StaticViewSitemap(Sitemap):
@@ -30,16 +27,29 @@ class StaticViewSitemap(Sitemap):
         with translation.override(settings.LANGUAGE_CODE):
             return reverse(item, current_app='coloring_pages')
             
-    def get_urls(self, **kwargs):
-        # Override get_urls to ensure proper URL formatting
+    def get_urls(self, page=1, site=None, protocol=None):
+        # Override to include proper domain from the request
         urls = []
+        protocol = protocol or 'http'
+        domain = None
+        
+        # Try to get the current site domain
+        try:
+            if site is None:
+                site = get_current_site(None)
+            domain = site.domain
+        except:
+            domain = 'localhost:8000'  # Fallback if site framework not properly set up
+            
         for item in self.items():
             path = self.location(item)
-            # Only prepend SITE_URL if the path is relative
+            
+            # Build the full URL
             if not path.startswith(('http://', 'https://')):
-                loc = f"{SITE_URL.rstrip('/')}{path}"
+                loc = f"{protocol}://{domain.rstrip('/')}{path}"
             else:
                 loc = path
+                
             url_info = {
                 'location': loc,
                 'changefreq': self._get('changefreq', None, 'weekly'),
@@ -48,6 +58,7 @@ class StaticViewSitemap(Sitemap):
                 'alternates': []
             }
             urls.append(url_info)
+            
         return urls
 
 
@@ -81,11 +92,23 @@ class ColoringPageSitemap(Sitemap):
     def get_urls(self, page=1, site=None, protocol=None):
         # Override to include hreflang links for each URL
         urls = []
+        protocol = protocol or 'http'
+        domain = None
+        
+        # Try to get the current site domain
+        try:
+            if site is None:
+                site = get_current_site(None)
+            domain = site.domain
+        except:
+            domain = 'localhost:8000'  # Fallback if site framework not properly set up
+            
         for item in self.paginator.page(page).object_list:
             path = self.location(item)
-            # Only prepend SITE_URL if the path is relative
+            
+            # Build the full URL
             if not path.startswith(('http://', 'https://')):
-                loc = f"{SITE_URL.rstrip('/')}{path}"
+                loc = f"{protocol}://{domain.rstrip('/')}{path}"
             else:
                 loc = path
                 
@@ -104,7 +127,7 @@ class ColoringPageSitemap(Sitemap):
                                kwargs={'seo_url': item.seo_url_en}, 
                                current_app='coloring_pages')
                 if not en_path.startswith(('http://', 'https://')):
-                    en_url = f"{SITE_URL.rstrip('/')}{en_path}"
+                    en_url = f"{protocol}://{domain.rstrip('/')}{en_path}"
                 else:
                     en_url = en_path
                 url_info['alternates'].append({
@@ -117,7 +140,7 @@ class ColoringPageSitemap(Sitemap):
                                kwargs={'seo_url': item.seo_url_de}, 
                                current_app='coloring_pages')
                 if not de_path.startswith(('http://', 'https://')):
-                    de_url = f"{SITE_URL.rstrip('/')}{de_path}"
+                    de_url = f"{protocol}://{domain.rstrip('/')}{de_path}"
                 else:
                     de_url = de_path
                 url_info['alternates'].append({
