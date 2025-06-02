@@ -188,9 +188,6 @@ msgstr "Privacy Policy"
 msgid "base_terms_of_service"
 msgstr "Terms of Service"
 
-msgid "base_connect_title"
-msgstr "Connect"
-
 msgid "base_language_title"
 msgstr "Language"
 

@@ -248,9 +248,6 @@ msgstr "Datenschutzerklärung"
 msgid "base_terms_of_service"
 msgstr "Nutzungsbedingungen"
 
-msgid "base_connect_title"
-msgstr "Kontakt"
-
 msgid "base_language_title"
 msgstr "Sprache"
 
