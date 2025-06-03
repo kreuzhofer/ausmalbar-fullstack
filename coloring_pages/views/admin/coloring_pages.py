@@ -264,7 +264,7 @@ def confirm_coloring_page(request):
                 temp_thumb_path = result['thumb_path']
                 
                 # Update the pending page data with new files and updated metadata
-                request.session['pending_page'] = {
+                pending_update = {
                     'title_en': title_en,
                     'title_de': title_de,
                     'description_en': description_en,
@@ -272,8 +272,15 @@ def confirm_coloring_page(request):
                     'prompt': prompt,  # Store the prompt that was used
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,
-                    'temp_dir': temp_dir
+                    'temp_dir': temp_dir,
+                    'system_prompt_id': str(system_prompt.id) if system_prompt else None
                 }
+                # Preserve any existing session data we want to keep
+                pending_update.update({
+                    k: v for k, v in request.session.get('pending_page', {}).items()
+                    if k not in pending_update
+                })
+                request.session['pending_page'] = pending_update
                 
                 # Redirect back to the confirmation page with the new image
                 return redirect('admin:confirm_coloring_page')

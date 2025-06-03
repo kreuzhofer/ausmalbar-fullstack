@@ -147,14 +147,12 @@
     <form method="post" id="confirmation_form">
         {% csrf_token %}
         <input type="hidden" name="prompt" id="hidden_prompt" value="{{ pending_page.prompt }}">
-        <!-- Ensure we have a system prompt field in the form -->
-        <input type="hidden" name="system_prompt" id="system_prompt_input" value="{{ current_system_prompt_id|default:'' }}">
-        
-        <!-- Hidden field to store the current system prompt for reference -->
-        <input type="hidden" name="current_system_prompt" value="{{ current_system_prompt_id|default:'' }}">
         
         <!-- Hidden field to store the system prompt ID for form submission -->
         <input type="hidden" name="system_prompt" id="system_prompt_input" value="{{ current_system_prompt_id|default:'' }}">
+        
+        <!-- Hidden field to store the action (regenerate/confirm/reject) -->
+        <input type="hidden" name="action" id="form_action" value="">
         <div class="action-buttons">
             <button type="submit" name="action" value="reject" class="btn-reject">
                 {% trans 'Reject & Discard' %}
@@ -170,35 +168,54 @@
 </div>
 
 <script>
-// Handle the regenerate button click
+// Handle form submission for all actions
 document.addEventListener('DOMContentLoaded', function() {
     const regenerateBtn = document.getElementById('regenerate_btn');
+    const confirmBtn = document.querySelector('button[value="confirm"]');
+    const rejectBtn = document.querySelector('button[value="reject"]');
     const promptField = document.getElementById('prompt');
     const hiddenPrompt = document.getElementById('hidden_prompt');
     const systemPromptSelect = document.getElementById('system_prompt_select');
+    const systemPromptInput = document.getElementById('system_prompt_input');
     const form = document.getElementById('confirmation_form');
+    const formAction = document.getElementById('form_action');
     
-    if (regenerateBtn && promptField && hiddenPrompt && form && systemPromptSelect) {
+    // Function to handle form submission
+    function handleFormSubmit(e, action) {
+        e.preventDefault();
+        
+        // Update the hidden prompt with the current value
+        hiddenPrompt.value = promptField.value.trim();
+        
+        // Update the system prompt input with the selected value
+        if (systemPromptSelect && systemPromptInput) {
+            systemPromptInput.value = systemPromptSelect.value;
+        }
+        
+        // Set the form action
+        formAction.value = action;
+        
+        // Submit the form
+        form.submit();
+    }
+    
+    // Set up event listeners for all action buttons
+    if (regenerateBtn) {
         regenerateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Update the hidden prompt with the current value
-            hiddenPrompt.value = promptField.value.trim();
-            
-            // Create a hidden input for the action
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'regenerate';
-            
-            // Add it to the form
-            form.appendChild(actionInput);
-            
-            // Submit the form
-            form.submit();
+            handleFormSubmit(e, 'regenerate');
         });
-    } else {
-        console.error('Required form elements not found');
+    }
+    
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function(e) {
+            handleFormSubmit(e, 'confirm');
+        });
+    }
+    
+    if (rejectBtn) {
+        rejectBtn.addEventListener('click', function(e) {
+            handleFormSubmit(e, 'reject');
+        });
     }
 });
 </script>
