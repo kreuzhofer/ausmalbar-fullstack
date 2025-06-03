@@ -3,6 +3,7 @@
 
 {% block extrahead %}
     {{ block.super }}
+    {{ form.media }}
     <style>
         .confirmation-container {
             max-width: 800px;
@@ -119,6 +120,19 @@
         </div>
         
         <div class="preview-field">
+            <label for="system_prompt_select">{% trans 'System Prompt' %}:</label>
+            <select id="system_prompt_select" name="system_prompt" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">{% trans '-- Default System Prompt --' %}</option>
+                {% for prompt in system_prompts %}
+                    <option value="{{ prompt.id }}" {% if prompt.id|stringformat:'s' == current_system_prompt_id|stringformat:'s' %}selected{% endif %}>
+                        {{ prompt.name }} ({{ prompt.model_provider }}/{{ prompt.model_name }})
+                    </option>
+                {% endfor %}
+            </select>
+            <div class="help">{% trans 'Select a system prompt to use for image generation.' %}</div>
+        </div>
+        
+        <div class="preview-field">
             <label>{% trans 'Preview' %}:</label>
             <div class="preview-container">
                 {% if pending_page.thumb_data %}
@@ -133,6 +147,14 @@
     <form method="post" id="confirmation_form">
         {% csrf_token %}
         <input type="hidden" name="prompt" id="hidden_prompt" value="{{ pending_page.prompt }}">
+        <!-- Ensure we have a system prompt field in the form -->
+        <input type="hidden" name="system_prompt" id="system_prompt_input" value="{{ current_system_prompt_id|default:'' }}">
+        
+        <!-- Hidden field to store the current system prompt for reference -->
+        <input type="hidden" name="current_system_prompt" value="{{ current_system_prompt_id|default:'' }}">
+        
+        <!-- Hidden field to store the system prompt ID for form submission -->
+        <input type="hidden" name="system_prompt" id="system_prompt_input" value="{{ current_system_prompt_id|default:'' }}">
         <div class="action-buttons">
             <button type="submit" name="action" value="reject" class="btn-reject">
                 {% trans 'Reject & Discard' %}
@@ -153,13 +175,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const regenerateBtn = document.getElementById('regenerate_btn');
     const promptField = document.getElementById('prompt');
     const hiddenPrompt = document.getElementById('hidden_prompt');
+    const systemPromptSelect = document.getElementById('system_prompt_select');
     const form = document.getElementById('confirmation_form');
     
-    if (regenerateBtn && promptField && hiddenPrompt && form) {
+    if (regenerateBtn && promptField && hiddenPrompt && form && systemPromptSelect) {
         regenerateBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Update the hidden prompt field with the current value
+            // Update the hidden prompt with the current value
             hiddenPrompt.value = promptField.value.trim();
             
             // Create a hidden input for the action
@@ -174,6 +197,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Submit the form
             form.submit();
         });
+    } else {
+        console.error('Required form elements not found');
     }
 });
 </script>

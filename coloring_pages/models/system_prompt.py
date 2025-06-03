@@ -34,6 +34,13 @@ class SystemPrompt(TimeStampedModel):
         verbose_name=_('System Prompt'),
         help_text=_('The system prompt to use with this model')
     )
+    
+    quality = models.CharField(
+        max_length=20,
+        default='standard',
+        verbose_name=_('Quality'),
+        help_text=_('Image generation quality setting (e.g., standard, hd)')
+    )
 
     class Meta:
         verbose_name = _('System Prompt')

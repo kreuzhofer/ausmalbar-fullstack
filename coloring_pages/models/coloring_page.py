@@ -34,6 +34,10 @@ class ColoringPage(TimeStampedModel):
                                  verbose_name=_('SEO URL (English)'))
     seo_url_de = models.SlugField(max_length=255, unique=True, blank=True, null=True, 
                                  verbose_name=_('SEO URL (German)'))
+    
+    # Metadata for additional data like system prompt information
+    metadata = models.JSONField(blank=True, null=True, default=dict,
+                              help_text=_('Additional metadata stored as JSON'))
 
     class Meta:
         indexes = [

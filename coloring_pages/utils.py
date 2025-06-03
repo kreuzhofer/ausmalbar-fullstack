@@ -104,12 +104,13 @@ def get_coloring_page_prompt(prompt: str) -> str:
         ) % {'prompt': prompt}
 
 
-def generate_coloring_page_image(prompt, generate_thumbnail=True):
+def generate_coloring_page_image(prompt, system_prompt=None, generate_thumbnail=True):
     """
     Generate a coloring page image using DALL-E 3 and optionally create a thumbnail.
     
     Args:
         prompt (str): The prompt to generate the image from
+        system_prompt (SystemPrompt, optional): The system prompt to use for generation
         generate_thumbnail (bool): Whether to generate a thumbnail (default: True)
         
     Returns:
@@ -133,25 +134,56 @@ def generate_coloring_page_image(prompt, generate_thumbnail=True):
         # Initialize OpenAI client
         client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         
-        # Generate the image using DALL-E 3
-        prompt_text = get_coloring_page_prompt(prompt)
+        # Generate the image using the selected system prompt or default
+        if system_prompt:
+            # Use the selected system prompt's model (without provider) and prompt text
+            model_name = system_prompt.model_name  # Just use the model name without provider
+            prompt_text = system_prompt.prompt % {'prompt': prompt}
+            # Use the quality setting from the system prompt, default to 'standard' if not set
+            quality = getattr(system_prompt, 'quality', 'standard')
+        else:
+            # Fall back to default behavior
+            model_name = "gpt-image-1"
+            prompt_text = get_coloring_page_prompt(prompt)
+            quality = 'standard'  # Default quality if no system prompt
+            
         response = client.images.generate(
-            #model="dall-e-3",
-            model="gpt-image-1",
+            model=model_name,
             prompt=prompt_text,
             size="1024x1024",
-            quality="medium",
+            quality=quality,
             n=1,
             #response_format="b64_json"
         )
         
-        # Get the base64 image data
-        image_data = response.data[0].b64_json
-        image_bytes = base64.b64decode(image_data)
+        # Default extension
+        ext = '.png'
+        
+        # Handle the response based on whether we got a URL or base64 data
+        if hasattr(response.data[0], 'b64_json') and response.data[0].b64_json:
+            # Handle base64 encoded image data
+            image_data = response.data[0].b64_json
+            image_bytes = base64.b64decode(image_data)
+        elif hasattr(response.data[0], 'url') and response.data[0].url:
+            # Handle URL response (DALL-E 3)
+            import requests
+            from urllib.parse import urlparse
+            
+            image_url = response.data[0].url
+            img_response = requests.get(image_url)
+            img_response.raise_for_status()
+            image_bytes = img_response.content
+            
+            # Extract file extension from URL or keep default
+            path = urlparse(image_url).path
+            ext = os.path.splitext(path)[1].lower() or ext
+        else:
+            raise ValueError("No image data found in the API response")
+            
         result['image_bytes'] = image_bytes
         
         # Save the image to a temporary file
-        image_name = f"coloring_{uuid.uuid4()}.png"
+        image_name = f"coloring_{uuid.uuid4()}{ext}"
         image_path = os.path.join(temp_dir, image_name)
         with open(image_path, 'wb') as f:
             f.write(image_bytes)

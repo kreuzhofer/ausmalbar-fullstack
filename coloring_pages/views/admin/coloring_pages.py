@@ -26,6 +26,7 @@ def generate_coloring_page(request):
         
         if form.is_valid():
             prompt = form.cleaned_data.get('prompt', '').strip()
+            system_prompt = form.cleaned_data.get('system_prompt')
             
             if not prompt:
                 messages.error(request, _('Please enter a prompt'))
@@ -53,7 +54,15 @@ def generate_coloring_page(request):
                 
                 # Generate the image and thumbnail using our utility function
                 try:
-                    result = generate_coloring_page_image(prompt, generate_thumbnail=True)
+                    # Store the system prompt ID for reference
+                    system_prompt_id = system_prompt.id if system_prompt else None
+                    
+                    # Generate the image using the selected system prompt
+                    result = generate_coloring_page_image(
+                        prompt, 
+                        system_prompt=system_prompt,
+                        generate_thumbnail=True
+                    )
                     temp_dir = result['temp_dir']
                     temp_image_path = result['image_path']
                     temp_thumb_path = result['thumb_path']
@@ -73,6 +82,7 @@ def generate_coloring_page(request):
                     'description_en': description_en,
                     'description_de': description_de,
                     'prompt': prompt,  # Store the original prompt for regeneration
+                    'system_prompt_id': system_prompt_id,  # Store the selected system prompt ID for regeneration
                     'image_path': temp_image_path,
                     'thumb_path': temp_thumb_path,
                     'temp_dir': temp_dir
@@ -92,7 +102,7 @@ def generate_coloring_page(request):
                     'opts': ColoringPage._meta,
                 })
     else:
-        # For GET requests, show the form with just the prompt field
+        # For GET requests, show the form with the system prompt dropdown
         form = GenerateColoringPageForm()
     
     # Use our custom template that only shows the prompt field
@@ -118,6 +128,24 @@ def confirm_coloring_page(request):
         with open(pending_page['thumb_path'], 'rb') as f:
             pending_page['thumb_data'] = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
     
+    # Get all system prompts for the dropdown
+    from coloring_pages.models.system_prompt import SystemPrompt
+    system_prompts = list(SystemPrompt.objects.all().order_by('name'))
+    
+    # Get the current system prompt ID from the form data or the pending page
+    current_system_prompt_id = None
+    if request.method == 'POST' and 'system_prompt' in request.POST:
+        current_system_prompt_id = request.POST.get('system_prompt')
+        if current_system_prompt_id == '':
+            current_system_prompt_id = None
+        pending_page['system_prompt_id'] = current_system_prompt_id
+        request.session.modified = True
+    else:
+        current_system_prompt_id = pending_page.get('system_prompt_id')
+    
+    # Convert to string for template comparison
+    current_system_prompt_id = str(current_system_prompt_id) if current_system_prompt_id is not None else ''
+
     if request.method == 'POST':
         action = request.POST.get('action')
         
@@ -132,6 +160,19 @@ def confirm_coloring_page(request):
                     description_de=pending_page.get('description_de', pending_page.get('description_en', '')),
                     prompt=pending_page['prompt']
                 )
+                
+                # Save the system prompt reference if one was used
+                system_prompt_id = pending_page.get('system_prompt_id')
+                if system_prompt_id:
+                    try:
+                        system_prompt = SystemPrompt.objects.get(id=system_prompt_id)
+                        # You might want to store this in a new field on the ColoringPage model
+                        # For now, we'll store it in a JSONField if available, or as a text field
+                        page.metadata = page.metadata or {}
+                        page.metadata['system_prompt_id'] = system_prompt_id
+                        page.metadata['system_prompt_name'] = system_prompt.name
+                    except (SystemPrompt.DoesNotExist, ValueError):
+                        pass  # Skip if system prompt not found
                 
                 # Save the main image
                 with open(pending_page['image_path'], 'rb') as f:
@@ -168,8 +209,19 @@ def confirm_coloring_page(request):
                 return redirect('admin:coloring_pages_coloringpage_changelist')
         
         elif action == 'regenerate':
-            # Get the prompt from the form or use the existing one
+            # Get the prompt and system prompt from the form or use the existing ones
             prompt = request.POST.get('prompt', pending_page['prompt'])
+            system_prompt_id = request.POST.get('system_prompt')
+            
+            # Update the pending page with the new system prompt
+            if system_prompt_id and system_prompt_id != 'None':
+                pending_page['system_prompt_id'] = str(system_prompt_id)
+            else:
+                pending_page.pop('system_prompt_id', None)
+                
+            # Ensure the session is properly updated
+            request.session['pending_page'] = pending_page
+            request.session.modified = True
             
             # Generate new titles and descriptions based on the updated prompt
             title_en, title_de, description_en, description_de = generate_titles_and_descriptions(prompt)
@@ -189,11 +241,24 @@ def confirm_coloring_page(request):
                 import shutil
                 shutil.rmtree(pending_page['temp_dir'], ignore_errors=True)
             
+            # Get the system prompt object if an ID was provided
+            system_prompt = None
+            if system_prompt_id and system_prompt_id != 'None':
+                try:
+                    system_prompt = SystemPrompt.objects.get(id=system_prompt_id)
+                except (SystemPrompt.DoesNotExist, ValueError):
+                    # If system prompt not found, it will be None (use default)
+                    pass
+            
             # Initialize temp_dir at the beginning of the block
             temp_dir = None
             try:
-                # Generate new image using our utility function
-                result = generate_coloring_page_image(prompt, generate_thumbnail=True)
+                # Generate new image using our utility function with the selected system prompt
+                result = generate_coloring_page_image(
+                    prompt, 
+                    system_prompt=system_prompt,  # This can be None to use default
+                    generate_thumbnail=True
+                )
                 temp_dir = result['temp_dir']
                 temp_image_path = result['image_path']
                 temp_thumb_path = result['thumb_path']
@@ -225,6 +290,8 @@ def confirm_coloring_page(request):
     # For GET requests, show the confirmation page
     return render(request, 'admin/coloring_pages/coloringpage/confirm_generation.html', {
         'pending_page': pending_page,
+        'system_prompts': system_prompts,
+        'current_system_prompt_id': current_system_prompt_id,
         'opts': ColoringPage._meta,
         'title': _('Confirm Coloring Page Generation'),
     })

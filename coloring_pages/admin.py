@@ -287,7 +287,7 @@ class SystemPromptAdmin(admin.ModelAdmin):
     actions = ['duplicate_prompt']
     fieldsets = (
         (None, {
-            'fields': ('name', 'model_provider', 'model_name')
+            'fields': ('name', 'model_provider', 'model_name', 'quality')
         }),
         ('Prompt', {
             'fields': ('prompt',)
@@ -297,6 +297,8 @@ class SystemPromptAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    list_display = ('name', 'model_provider', 'model_name', 'quality', 'created_at')
+    list_filter = ('quality', 'model_provider', 'created_at')
 
     def duplicate_prompt(self, request, queryset):
         """
