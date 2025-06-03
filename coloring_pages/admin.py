@@ -9,7 +9,7 @@ from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from openai import OpenAI
-from .models import ColoringPage, SearchQuery
+from .models import ColoringPage, SearchQuery, SystemPrompt
 from .forms import ColoringPageForm
 from .views.admin import generate_coloring_page, confirm_coloring_page
 from .utils import generate_coloring_page_image
@@ -272,3 +272,22 @@ class SearchQueryAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'created_at'
     list_per_page = 20
+
+@admin.register(SystemPrompt)
+class SystemPromptAdmin(admin.ModelAdmin):
+    list_display = ('model_provider', 'model_name', 'created_at', 'updated_at')
+    list_filter = ('model_provider', 'created_at')
+    search_fields = ('model_provider', 'model_name', 'prompt')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('model_provider', 'model_name')
+        }),
+        ('Prompt', {
+            'fields': ('prompt',)
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

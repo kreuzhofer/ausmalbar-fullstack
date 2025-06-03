@@ -17,6 +17,7 @@ import re
 import json
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
 # GeoIP2 is optional
 try:
@@ -194,6 +195,40 @@ class ColoringPage(models.Model):
                     os.rmdir(thumbnail_dir)
         except (ValueError, OSError) as e:
             print(f"Error deleting thumbnail file {thumbnail_path}: {e}")
+
+
+class SystemPrompt(models.Model):
+    """
+    Stores system prompts for different AI model providers and models.
+    """
+    class Meta:
+        verbose_name = _('System Prompt')
+        verbose_name_plural = _('System Prompts')
+        ordering = ['model_provider', 'model_name']
+        unique_together = [['model_provider', 'model_name']]
+    
+    model_provider = models.CharField(
+        max_length=100,
+        verbose_name=_('Model Provider'),
+        help_text=_('The provider of the AI model (e.g., OpenAI, Anthropic, etc.)')
+    )
+    
+    model_name = models.CharField(
+        max_length=100,
+        verbose_name=_('Model Name'),
+        help_text=_('The name of the specific model (e.g., gpt-4, claude-2, etc.)')
+    )
+    
+    prompt = models.TextField(
+        verbose_name=_('System Prompt'),
+        help_text=_('The system prompt to use with this model')
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created At'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated At'))
+    
+    def __str__(self):
+        return f"{self.model_provider} - {self.model_name}"
 
 
 class SearchQuery(models.Model):
