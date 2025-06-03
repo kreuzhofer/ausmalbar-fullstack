@@ -8,7 +8,7 @@ from .views.home import home
 from .views.search import search
 from .views.detail import page_detail, download_image
 from .views.views_class_based import ColoringPageDetailView, ImprintView
-from .views.views_legal import PrivacyPolicyView, TermsOfServiceView
+from .views_legal import PrivacyPolicyView, TermsOfServiceView
 from .views.admin.coloring_pages import generate_coloring_page, confirm_coloring_page
 
 app_name = 'coloring_pages'
