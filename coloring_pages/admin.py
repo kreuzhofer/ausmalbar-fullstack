@@ -275,13 +275,13 @@ class SearchQueryAdmin(admin.ModelAdmin):
 
 @admin.register(SystemPrompt)
 class SystemPromptAdmin(admin.ModelAdmin):
-    list_display = ('model_provider', 'model_name', 'created_at', 'updated_at')
+    list_display = ('name', 'model_provider', 'model_name', 'created_at', 'updated_at')
     list_filter = ('model_provider', 'created_at')
-    search_fields = ('model_provider', 'model_name', 'prompt')
+    search_fields = ('name', 'model_provider', 'model_name', 'prompt')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {
-            'fields': ('model_provider', 'model_name')
+            'fields': ('name', 'model_provider', 'model_name')
         }),
         ('Prompt', {
             'fields': ('prompt',)

@@ -204,8 +204,15 @@ class SystemPrompt(models.Model):
     class Meta:
         verbose_name = _('System Prompt')
         verbose_name_plural = _('System Prompts')
-        ordering = ['model_provider', 'model_name']
+        ordering = ['name', 'model_provider', 'model_name']
         unique_together = [['model_provider', 'model_name']]
+    
+    name = models.CharField(
+        max_length=200,
+        verbose_name=_('Name'),
+        help_text=_('A descriptive name for this system prompt'),
+        default='Unnamed Prompt'  # Default value for existing records
+    )
     
     model_provider = models.CharField(
         max_length=100,
@@ -228,7 +235,7 @@ class SystemPrompt(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Updated At'))
     
     def __str__(self):
-        return f"{self.model_provider} - {self.model_name}"
+        return self.name
 
 
 class SearchQuery(models.Model):
