@@ -185,7 +185,7 @@ msgstr "Diese Seite drucken"
 # Search page
 # Search-related messages
 msgid "search_placeholder"
-msgstr "Nach Ausmalseiten suchen..."
+msgstr "Nach Malvorlagen suchen..."
 
 msgid "search_aria_label"
 msgstr "Suche"
@@ -197,19 +197,19 @@ msgid "search_popular_searches"
 msgstr "Beliebte Suchanfragen"
 
 msgid "search_all_pages"
-msgstr "Alle Ausmalseiten"
+msgstr "Alle Malvorlagen"
 
 msgid "search_results_found"
 msgstr " gefunden"
 
 msgid "search_browse_collection"
-msgstr "Durchstöbere unsere Sammlung von Ausmalseiten"
+msgstr "Durchstöbere unsere Sammlung von Malvorlagen"
 
 msgid "search_try_different_term"
 msgstr "Versuch es mit einem anderen Suchbegriff."
 
 msgid "search_no_pages_found"
-msgstr "Keine Ausmalseiten gefunden."
+msgstr "Keine Malvorlagen gefunden."
 
 # Pagination
 msgid "pagination_current_page"
