@@ -75,7 +75,7 @@ def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
     return title_en, title_de, description_en, description_de
 
 def get_coloring_page_prompt(prompt: str) -> str:
-    """Generate a clean, simple prompt for creating coloring page images.
+    """Get a prompt for creating coloring page images from the SystemPrompt table.
     
     Args:
         prompt: The subject of the coloring page
@@ -83,18 +83,25 @@ def get_coloring_page_prompt(prompt: str) -> str:
     Returns:
         str: A clean prompt for the image generation
     """
-    return _(
-        "Create a clean black and white line drawing of %(prompt)s. "
-        "Use smooth, continuous black lines on pure white background. "
-        "No color, shading, gradients, textures, or patterns. "
-        "No background elements, borders, frames, shadows, or drop shadows. "
-        "No text, labels, or additional objects. Focus only on the main subject. "
-        "The image should be a single, clear outline drawing with all lines connected. "
-        "The subject should be centered and fill most of the frame WITHOUT TOUCHING THE EDGES. Avoid cutting off the main subject. "
-        "Do not include any elements that suggest it's a coloring page unless those are explicitly part of the prompt (NO PENCILS, CRAYONS, ETC.). "
-        "If you are asked for example for 'a cat' this means 'one cat' not multiple cats. avoid duplication of objects if not asked for."
-        "If the object is likely to have a highly detailed pattern, such as a flower or a leaf or the fur of a pet, do not include it so it can be colored. "
-    ) % {'prompt': prompt}
+    from coloring_pages.models.system_prompt import SystemPrompt
+    
+    try:
+        system_prompt = SystemPrompt.objects.get(name='default-image')
+        return system_prompt.prompt % {'prompt': prompt}
+    except (SystemPrompt.DoesNotExist, Exception):
+        # Fallback to default prompt if not found or any error occurs
+        return _(
+            "Create a clean black and white line drawing of %(prompt)s. "
+            "Use smooth, continuous black lines on pure white background. "
+            "No color, shading, gradients, textures, or patterns. "
+            "No background elements, borders, frames, shadows, or drop shadows. "
+            "No text, labels, or additional objects. Focus only on the main subject. "
+            "The image should be a single, clear outline drawing with all lines connected. "
+            "The subject should be centered and fill most of the frame WITHOUT TOUCHING THE EDGES. Avoid cutting off the main subject. "
+            "Do not include any elements that suggest it's a coloring page unless those are explicitly part of the prompt (NO PENCILS, CRAYONS, ETC.). "
+            "If you are asked for example for 'a cat' this means 'one cat' not multiple cats. avoid duplication of objects if not asked for."
+            "If the object is likely to have a highly detailed pattern, such as a flower or a leaf or the fur of a pet, do not include it so it can be colored. "
+        ) % {'prompt': prompt}
 
 
 def generate_coloring_page_image(prompt, generate_thumbnail=True):
