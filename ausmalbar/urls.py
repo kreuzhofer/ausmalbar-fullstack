@@ -27,10 +27,10 @@ urlpatterns += i18n_patterns(
 urlpatterns += [
     path('admin/', admin.site.urls),
     # Add robots.txt and ads.txt handlers
-    path('robots.txt', TemplateView.as_view(
-        template_name='robots.txt', 
-        content_type='text/plain'
-    )),
+    path('robots.txt', serve, {
+        'document_root': os.path.join(settings.BASE_DIR, 'static'),
+        'path': 'robots.txt',
+    }, name='robots_txt'),
     path('ads.txt', serve, {
         'document_root': os.path.join(settings.BASE_DIR, 'static'),
         'path': 'ads.txt',
