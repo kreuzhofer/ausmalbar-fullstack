@@ -275,12 +275,16 @@ class SearchQueryAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     list_per_page = 20
 
+from django.contrib import admin, messages
+from django.utils.translation import gettext_lazy as _
+
 @admin.register(SystemPrompt)
 class SystemPromptAdmin(admin.ModelAdmin):
     list_display = ('name', 'model_provider', 'model_name', 'created_at', 'updated_at')
     list_filter = ('model_provider', 'created_at')
     search_fields = ('name', 'model_provider', 'model_name', 'prompt')
     readonly_fields = ('created_at', 'updated_at')
+    actions = ['duplicate_prompt']
     fieldsets = (
         (None, {
             'fields': ('name', 'model_provider', 'model_name')
@@ -293,3 +297,61 @@ class SystemPromptAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def duplicate_prompt(self, request, queryset):
+        """
+        Action to duplicate selected system prompts with a new name and unique model identifier.
+        """
+        if queryset.count() != 1:
+            self.message_user(
+                request,
+                _('Please select exactly one prompt to duplicate.'),
+                messages.ERROR
+            )
+            return
+
+        original = queryset.first()
+        
+        # Create a copy with a new name
+        new_name = f"{original.name} (Copy)"
+        counter = 1
+        while SystemPrompt.objects.filter(name=new_name).exists():
+            counter += 1
+            new_name = f"{original.name} (Copy {counter})"
+        
+        # Create a unique model name by appending a suffix
+        base_model_name = original.model_name
+        new_model_name = f"{base_model_name}-copy"
+        counter = 1
+        while SystemPrompt.objects.filter(
+            model_provider=original.model_provider,
+            model_name=new_model_name
+        ).exists():
+            counter += 1
+            new_model_name = f"{base_model_name}-copy-{counter}"
+        
+        try:
+            new_prompt = SystemPrompt.objects.create(
+                name=new_name,
+                model_provider=original.model_provider,
+                model_name=new_model_name,
+                prompt=original.prompt
+            )
+            
+            self.message_user(
+                request,
+                _('Successfully duplicated "{original}" as "{new}" with model name "{model}".').format(
+                    original=original.name,
+                    new=new_prompt.name,
+                    model=new_model_name
+                ),
+                messages.SUCCESS
+            )
+        except Exception as e:
+            self.message_user(
+                request,
+                _('Error duplicating prompt: {error}').format(error=str(e)),
+                messages.ERROR
+            )
+    
+    duplicate_prompt.short_description = _('Duplicate selected prompt')
