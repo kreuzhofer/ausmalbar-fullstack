@@ -2,78 +2,75 @@ import base64
 import os
 from django.conf import settings
 from django.contrib import messages
+from django.core.files.base import ContentFile
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.http import require_http_methods
-
-from openai import OpenAI
+from django.views.generic import View
 
 from coloring_pages.forms import GenerateColoringPageForm
 from coloring_pages.models.coloring_page import ColoringPage
+from coloring_pages.models.system_prompt import SystemPrompt
 from coloring_pages.models.base import create_unique_slug
-from coloring_pages.utils import (
-    generate_titles_and_descriptions,
-    generate_coloring_page_image
-)
+from coloring_pages.utils import generate_titles_and_descriptions, generate_coloring_page_image
 
 
-def generate_coloring_page(request):
+class GenerateColoringPageView(View):
     """
     Admin view for generating a new coloring page using AI.
     """
-    if request.method == 'POST':
-        form = GenerateColoringPageForm(request.POST or None)
+    form_class = GenerateColoringPageForm
+    template_name = 'admin/coloring_pages/coloringpage/generate_form.html'
+    
+    def get_context_data(self, **kwargs):
+        """Get the context data for the view."""
+        context = {
+            'form': self.form_class(),
+            'title': _('Generate New Coloring Page'),
+            'opts': ColoringPage._meta,
+        }
+        context.update(kwargs)
+        return context
+    
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests."""
+        return render(request, self.template_name, self.get_context_data())
+    
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests."""
+        form = self.form_class(request.POST or None)
         
-        if form.is_valid():
-            prompt = form.cleaned_data.get('prompt', '').strip()
-            system_prompt = form.cleaned_data.get('system_prompt')
+        if not form.is_valid():
+            return render(request, self.template_name, self.get_context_data(form=form))
             
-            if not prompt:
-                messages.error(request, _('Please enter a prompt'))
-                return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
-                    'form': form,
-                    'title': _('Generate New Coloring Page'),
-                    'opts': ColoringPage._meta,
-                })
+        prompt = form.cleaned_data.get('prompt', '').strip()
+        system_prompt = form.cleaned_data.get('system_prompt')
+        
+        if not prompt:
+            messages.error(request, _('Please enter a prompt'))
+            return render(request, self.template_name, self.get_context_data(form=form))
+        
+        try:
+            # Generate titles and descriptions in both English and German
+            title_en, title_de, description_en, description_de = generate_titles_and_descriptions(prompt)
             
+            # Ensure titles are not too long (max 100 chars)
+            title_en = title_en[:100]
+            title_de = title_de[:100] if title_de else title_en  # Fallback to English if German is empty
+            
+            # Ensure we have at least basic descriptions
+            if not description_en:
+                description_en = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+            if not description_de:
+                description_de = _('Eine Malvorlage von ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
+            
+            # Generate the image and thumbnail using our utility function
             try:
-                client = OpenAI(api_key=settings.OPENAI_API_KEY)
-                
-                # Generate titles and descriptions in both English and German
-                title_en, title_de, description_en, description_de = generate_titles_and_descriptions(prompt)
-                
-                # Ensure titles are not too long (max 100 chars)
-                title_en = title_en[:100]
-                title_de = title_de[:100] if title_de else title_en  # Fallback to English if German is empty
-                
-                # Ensure we have at least basic descriptions
-                if not description_en:
-                    description_en = _('A coloring page of ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
-                if not description_de:
-                    description_de = _('Eine Malvorlage von ') + prompt[:90] + ('...' if len(prompt) > 90 else '')
-                
-                # Generate the image and thumbnail using our utility function
-                try:
-                    # Store the system prompt ID for reference
-                    system_prompt_id = system_prompt.id if system_prompt else None
-                    
-                    # Generate the image using the selected system prompt
-                    result = generate_coloring_page_image(
-                        prompt, 
-                        system_prompt=system_prompt,
-                        generate_thumbnail=True
-                    )
-                    temp_dir = result['temp_dir']
-                    temp_image_path = result['image_path']
-                    temp_thumb_path = result['thumb_path']
-                except Exception as e:
-                    # Clean up will be handled by the generate_coloring_page_image function
-                    messages.error(request, _('Error generating image: %s') % str(e))
-                    return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
-                        'form': form,
-                        'title': _('Generate New Coloring Page'),
-                        'opts': ColoringPage._meta,
-                    })
+                # Generate the image using the selected system prompt
+                result = generate_coloring_page_image(
+                    prompt, 
+                    system_prompt=system_prompt,
+                    generate_thumbnail=True
+                )
                 
                 # Store the temporary file paths and other data in the session
                 request.session['pending_page'] = {
@@ -82,71 +79,85 @@ def generate_coloring_page(request):
                     'description_en': description_en,
                     'description_de': description_de,
                     'prompt': prompt,  # Store the original prompt for regeneration
-                    'system_prompt_id': system_prompt_id,  # Store the selected system prompt ID for regeneration
-                    'image_path': temp_image_path,
-                    'thumb_path': temp_thumb_path,
-                    'temp_dir': temp_dir
+                    'system_prompt_id': str(system_prompt.id) if system_prompt else None,
+                    'image_path': result['image_path'],
+                    'thumb_path': result['thumb_path'],
+                    'temp_dir': result['temp_dir']
                 }
                 
                 # Redirect to confirmation page
                 return redirect('admin:confirm_coloring_page')
-            
+                
             except Exception as e:
-                import traceback
-                error_message = f"Error generating coloring page: {str(e)}\n\n{traceback.format_exc()}"
-                print(error_message)  # Log the full error to console
-                messages.error(request, _('Error generating coloring page: %(error)s') % {'error': str(e)})
-                return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
-                    'form': form,
-                    'title': _('Generate New Coloring Page'),
-                    'opts': ColoringPage._meta,
-                })
-    else:
-        # For GET requests, show the form with the system prompt dropdown
-        form = GenerateColoringPageForm()
-    
-    # Use our custom template that only shows the prompt field
-    return render(request, 'admin/coloring_pages/coloringpage/generate_form.html', {
-        'form': form,
-        'title': _('Generate New Coloring Page'),
-        'opts': ColoringPage._meta,
-    })
+                messages.error(request, _('Error generating image: %s') % str(e))
+                return render(request, self.template_name, self.get_context_data(form=form))
+                
+        except Exception as e:
+            import traceback
+            error_message = f"Error generating coloring page: {str(e)}\n\n{traceback.format_exc()}"
+            print(error_message)  # Log the full error to console
+            messages.error(request, _('Error generating coloring page: %(error)s') % {'error': str(e)})
+            return render(request, self.template_name, self.get_context_data(form=form))
 
 
-def confirm_coloring_page(request):
+class ConfirmColoringPageView(View):
     """
     Handle the confirmation page for generated coloring pages.
     """
-    if 'pending_page' not in request.session:
-        messages.error(request, _('No pending coloring page to confirm.'))
-        return redirect('admin:coloring_pages_coloringpage_changelist')
+    template_name = 'admin/coloring_pages/coloringpage/confirm_generation.html'
     
-    pending_page = request.session['pending_page']
+    def get_context_data(self, **kwargs):
+        """Get the context data for the view."""
+        pending_page = self.request.session.get('pending_page')
+        
+        # Read the thumbnail and encode it as base64
+        if pending_page and os.path.exists(pending_page.get('thumb_path', '')):
+            with open(pending_page['thumb_path'], 'rb') as f:
+                pending_page['thumb_data'] = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+        
+        # Get all system prompts for the dropdown
+        system_prompts = list(SystemPrompt.objects.all().order_by('name'))
+        
+        # Get the current system prompt ID from the form data or the pending page
+        current_system_prompt_id = None
+        if self.request.method == 'POST' and 'system_prompt' in self.request.POST:
+            current_system_prompt_id = self.request.POST.get('system_prompt')
+            if current_system_prompt_id == '':
+                current_system_prompt_id = None
+            pending_page['system_prompt_id'] = current_system_prompt_id
+            self.request.session.modified = True
+        else:
+            current_system_prompt_id = pending_page.get('system_prompt_id')
+        
+        # Convert to string for template comparison
+        current_system_prompt_id = str(current_system_prompt_id) if current_system_prompt_id is not None else ''
+        
+        context = {
+            'pending_page': pending_page,
+            'system_prompts': system_prompts,
+            'current_system_prompt_id': current_system_prompt_id,
+            'opts': ColoringPage._meta,
+            'title': _('Confirm Coloring Page Generation'),
+        }
+        context.update(kwargs)
+        return context
     
-    # Read the thumbnail and encode it as base64
-    if os.path.exists(pending_page.get('thumb_path', '')):
-        with open(pending_page['thumb_path'], 'rb') as f:
-            pending_page['thumb_data'] = f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+    def get(self, request, *args, **kwargs):
+        """Handle GET requests."""
+        if 'pending_page' not in request.session:
+            messages.error(request, _('No pending coloring page to confirm.'))
+            return redirect('admin:coloring_pages_coloringpage_changelist')
+            
+        return render(request, self.template_name, self.get_context_data())
     
-    # Get all system prompts for the dropdown
-    from coloring_pages.models.system_prompt import SystemPrompt
-    system_prompts = list(SystemPrompt.objects.all().order_by('name'))
-    
-    # Get the current system prompt ID from the form data or the pending page
-    current_system_prompt_id = None
-    if request.method == 'POST' and 'system_prompt' in request.POST:
-        current_system_prompt_id = request.POST.get('system_prompt')
-        if current_system_prompt_id == '':
-            current_system_prompt_id = None
-        pending_page['system_prompt_id'] = current_system_prompt_id
-        request.session.modified = True
-    else:
-        current_system_prompt_id = pending_page.get('system_prompt_id')
-    
-    # Convert to string for template comparison
-    current_system_prompt_id = str(current_system_prompt_id) if current_system_prompt_id is not None else ''
-
-    if request.method == 'POST':
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests."""
+        if 'pending_page' not in request.session:
+            messages.error(request, _('No pending coloring page to confirm.'))
+            return redirect('admin:coloring_pages_coloringpage_changelist')
+            
+        pending_page = request.session['pending_page']
+        context = self.get_context_data()
         action = request.POST.get('action')
         
         if action == 'confirm':
@@ -166,8 +177,7 @@ def confirm_coloring_page(request):
                 if system_prompt_id:
                     try:
                         system_prompt = SystemPrompt.objects.get(id=system_prompt_id)
-                        # You might want to store this in a new field on the ColoringPage model
-                        # For now, we'll store it in a JSONField if available, or as a text field
+                        # Store in metadata
                         page.metadata = page.metadata or {}
                         page.metadata['system_prompt_id'] = system_prompt_id
                         page.metadata['system_prompt_name'] = system_prompt.name
@@ -176,7 +186,6 @@ def confirm_coloring_page(request):
                 
                 # Save the main image
                 with open(pending_page['image_path'], 'rb') as f:
-                    from django.core.files.base import ContentFile
                     image_content = ContentFile(f.read())
                     page.image.save(os.path.basename(pending_page['image_path']), image_content)
                 
@@ -293,12 +302,11 @@ def confirm_coloring_page(request):
                 
                 messages.error(request, _('Error generating image: %(error)s') % {'error': str(e)})
                 return redirect('admin:coloring_pages_coloringpage_changelist')
-    
-    # For GET requests, show the confirmation page
-    return render(request, 'admin/coloring_pages/coloringpage/confirm_generation.html', {
-        'pending_page': pending_page,
-        'system_prompts': system_prompts,
-        'current_system_prompt_id': current_system_prompt_id,
-        'opts': ColoringPage._meta,
-        'title': _('Confirm Coloring Page Generation'),
-    })
+        
+        # For any other case, just render the confirmation page
+        return render(request, self.template_name, context)
+
+
+# Keep the original function names for backwards compatibility
+generate_coloring_page = GenerateColoringPageView.as_view()
+confirm_coloring_page = ConfirmColoringPageView.as_view()
