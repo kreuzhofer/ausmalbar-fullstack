@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from django.conf import settings
-from coloring_pages.models import ColoringPage
+from coloring_pages.models.coloring_page import ColoringPage
 import os
 from datetime import datetime
 

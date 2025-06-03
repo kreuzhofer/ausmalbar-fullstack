@@ -4,7 +4,7 @@ Views for individual coloring page details and downloads.
 import re
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
-from ..models import ColoringPage
+from ..models.coloring_page import ColoringPage
 
 def page_detail(request, pk):
     """

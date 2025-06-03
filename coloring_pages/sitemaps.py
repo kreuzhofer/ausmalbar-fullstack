@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.utils import translation
 from django.contrib.sites.shortcuts import get_current_site
-from .models import ColoringPage
+from .models.coloring_page import ColoringPage
 
 
 class StaticViewSitemap(Sitemap):

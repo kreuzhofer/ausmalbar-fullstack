@@ -9,7 +9,9 @@ from django.template.response import TemplateResponse
 from django.http import HttpResponseRedirect
 from django.contrib.admin.helpers import ACTION_CHECKBOX_NAME
 from openai import OpenAI
-from .models import ColoringPage, SearchQuery, SystemPrompt
+from .models.coloring_page import ColoringPage
+from .models.search import SearchQuery
+from .models.system_prompt import SystemPrompt
 from .forms import ColoringPageForm
 from .views.admin import generate_coloring_page, confirm_coloring_page
 from .utils import generate_coloring_page_image

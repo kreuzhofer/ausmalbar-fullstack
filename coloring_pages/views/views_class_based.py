@@ -3,7 +3,7 @@ Class-based views for the coloring pages application.
 """
 from django.views.generic import DetailView, TemplateView
 from django.utils import timezone
-from ..models import ColoringPage
+from ..models.coloring_page import ColoringPage
 
 
 class ColoringPageDetailView(DetailView):

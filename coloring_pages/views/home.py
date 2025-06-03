@@ -2,7 +2,7 @@
 Home view for the coloring pages application.
 """
 from django.shortcuts import render
-from ..models import ColoringPage
+from ..models.coloring_page import ColoringPage
 
 def home(request):
     """

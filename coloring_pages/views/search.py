@@ -5,7 +5,8 @@ from django.db.models import Q
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.utils.translation import get_language
-from ..models import SearchQuery, ColoringPage
+from ..models.search import SearchQuery
+from ..models.coloring_page import ColoringPage
 
 def search(request):
     """

@@ -9,7 +9,8 @@ from django.views.decorators.http import require_http_methods
 from openai import OpenAI
 
 from coloring_pages.forms import GenerateColoringPageForm
-from coloring_pages.models import ColoringPage, create_unique_slug
+from coloring_pages.models.coloring_page import ColoringPage
+from coloring_pages.models.base import create_unique_slug
 from coloring_pages.utils import (
     generate_titles_and_descriptions,
     generate_coloring_page_image

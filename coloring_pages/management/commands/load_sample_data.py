@@ -1,7 +1,7 @@
 import os
 from django.core.management.base import BaseCommand
 from django.core.files import File
-from coloring_pages.models import ColoringPage
+from coloring_pages.models.coloring_page import ColoringPage
 from django.conf import settings
 
 class Command(BaseCommand):

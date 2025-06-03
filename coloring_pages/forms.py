@@ -1,5 +1,5 @@
 from django import forms
-from .models import ColoringPage
+from .models.coloring_page import ColoringPage
 
 class GenerateColoringPageForm(forms.Form):
     """Form for generating a new coloring page with just the prompt field."""

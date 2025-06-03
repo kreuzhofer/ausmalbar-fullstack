@@ -58,7 +58,7 @@
         <div class="text-center">
             {% for search in popular_searches %}
                 <a href="?q={{ search.query|urlencode }}" class="search-tag">
-                    {{ search.query }} ({{ search.search_count }})
+                    {{ search.query }} ({{ search.count }})
                 </a>
             {% endfor %}
         </div>
