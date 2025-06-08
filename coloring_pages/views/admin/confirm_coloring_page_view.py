@@ -126,6 +126,17 @@ class ConfirmColoringPageView(View):
                 messages.error(request, _('Failed to save the coloring page. Please try again.'))
                 return redirect('admin:coloring_pages_coloringpage_changelist')
         
+        elif action == 'reject':
+            # Clean up any temporary files
+            if os.path.exists(pending_page['temp_dir']):
+                shutil.rmtree(pending_page['temp_dir'], ignore_errors=True)
+            
+            # Clear the session
+            del request.session['pending_page']
+            
+            messages.info(request, _('Coloring page generation cancelled.'))
+            return redirect('admin:coloring_pages_coloringpage_changelist')
+        
         elif action == 'regenerate':
             # Get the prompt and system prompt from the form or use the existing ones
             prompt = request.POST.get('prompt', pending_page['prompt'])
