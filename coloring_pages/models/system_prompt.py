@@ -46,7 +46,6 @@ class SystemPrompt(TimeStampedModel):
         verbose_name = _('System Prompt')
         verbose_name_plural = _('System Prompts')
         ordering = ['name', 'model_provider', 'model_name']
-        unique_together = [['model_provider', 'model_name']]
     
     def __str__(self):
         return self.name

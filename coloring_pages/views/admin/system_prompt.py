@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.shortcuts import redirect
 from django.urls import reverse
+from ...models.system_prompt import SystemPrompt
 
 class SystemPromptAdmin(admin.ModelAdmin):
     list_display = ('name', 'model_provider', 'model_name', 'created_at', 'updated_at')

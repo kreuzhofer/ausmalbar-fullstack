@@ -6,9 +6,6 @@ from .models.system_prompt import SystemPrompt
 from .views.admin.coloring_page import ColoringPageAdmin
 from .views.admin.search import SearchQueryAdmin
 from .views.admin.system_prompt import SystemPromptAdmin
-from .models.coloring_page import ColoringPage
-from .models.search import SearchQuery
-from .models.system_prompt import SystemPrompt
 
 # Register models with their respective admin classes
 admin.site.register(ColoringPage, ColoringPageAdmin)
