@@ -62,6 +62,7 @@ This document contains project-specific guidelines to follow when generating or 
 3. **Environment Variables**: Use environment variables for configuration, never hardcode sensitive information
 4. **Dependencies**: Add new Python dependencies to `requirements.txt` or `requirements-dev.txt`
 5. This project is using ONLY PostgreSQL. DO NOT TRY to connect to a SQLite database for any reason.
+6. Every time you make a change that requires a rebuild or restart of the docker container, check if the db and web server are actually starting and if not, check the log files for reasons why.
 
 ## Security Guidelines
 
