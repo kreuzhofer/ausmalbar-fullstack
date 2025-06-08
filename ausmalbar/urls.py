@@ -10,9 +10,11 @@ import os
 
 from coloring_pages.sitemaps import sitemaps
 from coloring_pages.views import sitemap
+from coloring_pages.views.robots import robots
 
-# Sitemaps - outside i18n_patterns so they work with any language prefix
+# Sitemaps and robots.txt - outside i18n_patterns so they work with any language prefix
 urlpatterns = [
+    path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='django.contrib.sitemaps.views.sitemap'),
     path('sitemap-<section>.xml', sitemap, name='django.contrib.sitemaps.views.sitemap_section'),
 ]
@@ -27,10 +29,11 @@ urlpatterns += i18n_patterns(
 urlpatterns += [
     path('admin/', admin.site.urls),
     # Add robots.txt and ads.txt handlers
-    path('robots.txt', serve, {
-        'document_root': os.path.join(settings.BASE_DIR, 'static'),
-        'path': 'robots.txt',
-    }, name='robots_txt'),
+    # Remove duplicate robots.txt pattern since we already have it defined above
+    # path('robots.txt', serve, {
+    #     'document_root': os.path.join(settings.BASE_DIR, 'static'),
+    #     'path': 'robots.txt',
+    # }, name='robots_txt'),
     path('ads.txt', serve, {
         'document_root': os.path.join(settings.BASE_DIR, 'static'),
         'path': 'ads.txt',

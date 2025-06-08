@@ -10,6 +10,7 @@ from .home import home
 from .search import search
 from .detail import page_detail, download_image
 from .sitemap import sitemap
+from .robots import robots
 
 # Import class-based views
 from .views_class_based import ColoringPageDetailView, ImprintView
