@@ -99,9 +99,7 @@
             
             <div class="form-row">
                 <label for="id_prompt">{% trans 'Describe the coloring page you want to create:' %}</label>
-                <input type="text" name="prompt" class="vLargeTextField" required id="id_prompt" 
-                       placeholder="e.g., A cute puppy playing with a ball in the park" 
-                       value="{{ form.prompt.value|default:'' }}">
+                <textarea name="prompt" id="id_prompt" class="vLargeTextField" rows="5" style="height: auto; min-height: 100px;">{{ form.prompt.value|default:"" }}</textarea>
                 {% if form.prompt.errors %}
                     <div class="error">{{ form.prompt.errors }}</div>
                 {% endif %}
