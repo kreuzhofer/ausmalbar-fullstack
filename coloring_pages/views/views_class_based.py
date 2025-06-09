@@ -49,13 +49,14 @@ class ImprintView(TemplateView):
     template_name = 'imprint.html'
     
     def get_context_data(self, **kwargs):
+        from django.conf import settings
         context = super().get_context_data(**kwargs)
         context.update({
-            'imprint_name': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_NAME or 'Your Name',
-            'imprint_street': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_STREET or 'Your Street',
-            'imprint_city': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_CITY or 'Your City',
-            'imprint_country': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_COUNTRY or 'Your Country',
-            'imprint_email': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_EMAIL or 'your@email.com',
-            'imprint_phone': getattr(self.request, 'site', None) and self.request.site.settings.IMPRINT_PHONE or '+1234567890',
+            'imprint_name': getattr(settings, 'IMPRINT_NAME', 'Your Name'),
+            'imprint_street': getattr(settings, 'IMPRINT_STREET', 'Your Street'),
+            'imprint_city': getattr(settings, 'IMPRINT_CITY', 'Your City'),
+            'imprint_country': getattr(settings, 'IMPRINT_COUNTRY', 'Your Country'),
+            'imprint_email': getattr(settings, 'IMPRINT_EMAIL', 'your@email.com'),
+            'imprint_phone': getattr(settings, 'IMPRINT_PHONE', '+1234567890'),
         })
         return context
