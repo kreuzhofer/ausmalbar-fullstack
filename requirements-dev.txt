@@ -23,7 +23,7 @@ ipdb==0.13.13
 django-debug-toolbar==4.2.0
 
 # Security
-safety==2.3.5
+safety>=2.4.0b1
 bandit==1.7.5
 
 # Pre-commit hooks
