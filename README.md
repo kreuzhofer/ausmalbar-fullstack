@@ -190,6 +190,38 @@ docker run --rm -v ausmalbar-fullstack_media_volume:/target -v $(pwd):/backup al
 cat backup_20230527.sql | docker-compose exec -T db psql -U postgres ausmalbar
 ```
 
+### Testing
+
+1. **Run all tests**
+   ```bash
+   # Run all tests in the Django project
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m unittest discover -s coloring_pages/tests -p "*.py"
+   ```
+
+2. **Run specific test files**
+   ```bash
+   # Run tests in a specific file
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m unittest coloring_pages/tests/tests.py
+   ```
+
+3. **Run tests with verbose output**
+   ```bash
+   # Add -v flag for more detailed output
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m unittest discover -s coloring_pages/tests -p "*.py" -v
+   ```
+
+4. **Test coverage**
+   ```bash
+   # Install coverage if not already installed
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m pip install coverage
+   
+   # Run tests with coverage
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web coverage run -m unittest discover -s coloring_pages/tests -p "*.py"
+   
+   # View coverage report
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web coverage report
+   ```
+
 ### Updating the Application
 
 1. Pull the latest changes
