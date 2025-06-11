@@ -34,4 +34,5 @@ RUN python manage.py compilemessages
 # Production version - optimized for 6-core CPU
 # Workers = (2 x num_cores) + 1 = 13
 # Threads = 2-4 per worker (using 3 as a balanced value)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "13", "--threads", "3", "ausmalbar.wsgi:application"]
+# Timeout set to 120 seconds to handle longer-running requests like image generation
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "13", "--threads", "3", "--timeout", "120", "ausmalbar.wsgi:application"]
