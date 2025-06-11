@@ -198,7 +198,18 @@ cat backup_20230527.sql | docker-compose exec -T db psql -U postgres ausmalbar
    docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m unittest discover -s coloring_pages/tests -p "*.py"
    ```
 
-2. **Run specific test files**
+2. **Run frontend URL accessibility tests**
+   ```bash
+   # Run frontend URL accessibility tests
+   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 manage.py test coloring_pages.tests.frontend.test_frontend_urls --settings=coloring_pages.tests.frontend.test_settings
+   ```
+
+   These tests verify:
+   - Home page accessibility in both English and German
+   - Search page accessibility in both English and German
+   - Imprint page accessibility in both English and German
+
+3. **Run specific test files**
    ```bash
    # Run tests in a specific file
    docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m unittest coloring_pages/tests/tests.py

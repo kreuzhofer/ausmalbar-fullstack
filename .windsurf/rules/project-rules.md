@@ -61,7 +61,7 @@ This document contains project-specific guidelines to follow when generating or 
 2. **Docker Compose**: Use the defined services in `docker-compose.yml`
 3. **Environment Variables**: Use environment variables for configuration, never hardcode sensitive information
 4. **Dependencies**: Add new Python dependencies to `requirements.txt` or `requirements-dev.txt`
-5. This project is using ONLY PostgreSQL. DO NOT TRY to connect to a SQLite database for any reason.
+5. This project is using ONLY PostgreSQL for the dev and prod environments. DO NOT TRY to connect to a SQLite database for any reason EXCEPT running test cases.
 6. Every time you make a change that requires a rebuild or restart of the docker container, check if the db and web server are actually starting and if not, check the log files for reasons why.
 7. Always run the django tests after rebuilding and restarting docker containers
 
@@ -84,6 +84,7 @@ This document contains project-specific guidelines to follow when generating or 
 2. **Test Types**: Write unit tests, integration tests, and end-to-end tests as appropriate
 3. **Fixtures**: Use fixtures or factories for test data
 4. **Mocks**: Use mocks for external services
+5. **Test Database**: Tests will use in-memory SQLite
 
 ## Documentation
 
