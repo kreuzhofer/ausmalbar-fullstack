@@ -222,16 +222,19 @@ cat backup_20230527.sql | docker-compose exec -T db psql -U postgres ausmalbar
    ```
 
 4. **Test coverage**
-   ```bash
-   # Install coverage if not already installed
-   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web python3 -m pip install coverage
-   
-   # Run tests with coverage
-   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web coverage run -m unittest discover -s coloring_pages/tests -p "*.py"
-   
-   # View coverage report
-   docker-compose -f docker-compose.yml -f docker-compose.override.yml exec web coverage report
-   ```
+```bash
+# Run Django tests with coverage
+# (coverage is already included in requirements-dev.txt)
+
+docker-compose -f docker-compose.yml -f docker-compose.override.yml run --rm web \
+  sh -c "coverage run --source='.' manage.py test && coverage report -m"
+
+# (optional) Generate an HTML coverage report
+# The output will be written to the htmlcov/ directory
+
+docker-compose -f docker-compose.yml -f docker-compose.override.yml run --rm web \
+  sh -c "coverage html"
+```
 
 ### Updating the Application
 
