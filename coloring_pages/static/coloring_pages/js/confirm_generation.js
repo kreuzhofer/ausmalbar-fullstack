@@ -43,17 +43,36 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show loading indicator
             window.progressIndicator.update(0, 'Regenerating image...');
             
+            // Show loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'flex';
+            }
+            
+            // Start progress simulation
+            let progress = 10;
+            const maxProgress = 90;
+            const progressInterval = setInterval(() => {
+                if (progress < maxProgress) {
+                    progress += 5;
+                    window.progressIndicator.update(progress, 'Regenerating your coloring page... (This may take a minute)');
+                }
+            }, 2000);
+            
             // Submit the form via fetch
             fetch('', {  // Use empty string to submit to current URL
                 method: 'POST',
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-Action': 'regenerate'
+                    'X-Action': 'regenerate',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
                 },
                 credentials: 'same-origin'  // Include CSRF token
             })
             .then(response => {
+                clearInterval(progressInterval);
+                
                 if (!response.ok) {
                     return response.json().then(err => {
                         throw new Error(err.error || 'Network response was not ok');
@@ -63,6 +82,9 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.success && data.thumb_data) {
+                    // Update progress to 100%
+                    window.progressIndicator.update(100, 'Image regenerated successfully!');
+                    
                     // Update the preview image
                     const previewImg = document.querySelector('.preview-thumbnail');
                     if (previewImg) {
@@ -103,11 +125,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         promptField.value = data.prompt;
                     }
                     
-                    // Hide the progress indicator
-                    window.progressIndicator.hide();
-                    
-                    // Show success message
-                    window.progressIndicator.success('Image regenerated successfully!', 3000);
+                    // Hide the progress indicator after a delay
+                    setTimeout(() => {
+                        window.progressIndicator.hide();
+                    }, 1000);
                 } else if (data.redirect) {
                     window.location.href = data.redirect;
                 } else {
@@ -117,6 +138,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('Error:', error);
                 window.progressIndicator.error(error.message || 'An error occurred while regenerating. Please try again.');
+                
+                // Hide loading overlay after a delay
+                setTimeout(() => {
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
+                    }
+                }, 5000);
             });
         } else if (action === 'reject') {
             // For reject action, show confirmation dialog
