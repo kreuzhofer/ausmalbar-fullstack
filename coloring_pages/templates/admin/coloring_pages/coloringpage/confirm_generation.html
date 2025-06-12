@@ -4,6 +4,9 @@
 {% block extrahead %}
     {{ block.super }}
     {{ form.media }}
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'coloring_pages/js/progress.js' %}"></script>
+    <script src="{% static 'coloring_pages/js/confirm_generation.js' %}"></script>
     <style>
         .confirmation-container {
             max-width: 800px;
@@ -90,6 +93,8 @@
 <div class="confirmation-container">
     <h1>{% trans 'Confirm Coloring Page Generation' %}</h1>
     
+    {% include "admin/coloring_pages/coloringpage/includes/progress_indicator.html" %}
+    
     <div class="preview-section">
         <h2>{% trans 'Preview' %}</h2>
         
@@ -144,7 +149,7 @@
         </div>
     </div>
     
-    <form method="post" id="confirmation_form">
+    <form method="post" id="confirm-form" novalidate>
         {% csrf_token %}
         <input type="hidden" name="prompt" id="hidden_prompt" value="{{ pending_page.prompt }}">
         
@@ -168,55 +173,6 @@
 </div>
 
 <script>
-// Handle form submission for all actions
-document.addEventListener('DOMContentLoaded', function() {
-    const regenerateBtn = document.getElementById('regenerate_btn');
-    const confirmBtn = document.querySelector('button[value="confirm"]');
-    const rejectBtn = document.querySelector('button[value="reject"]');
-    const promptField = document.getElementById('prompt');
-    const hiddenPrompt = document.getElementById('hidden_prompt');
-    const systemPromptSelect = document.getElementById('system_prompt_select');
-    const systemPromptInput = document.getElementById('system_prompt_input');
-    const form = document.getElementById('confirmation_form');
-    const formAction = document.getElementById('form_action');
-    
-    // Function to handle form submission
-    function handleFormSubmit(e, action) {
-        e.preventDefault();
-        
-        // Update the hidden prompt with the current value
-        hiddenPrompt.value = promptField.value.trim();
-        
-        // Update the system prompt input with the selected value
-        if (systemPromptSelect && systemPromptInput) {
-            systemPromptInput.value = systemPromptSelect.value;
-        }
-        
-        // Set the form action
-        formAction.value = action;
-        
-        // Submit the form
-        form.submit();
-    }
-    
-    // Set up event listeners for all action buttons
-    if (regenerateBtn) {
-        regenerateBtn.addEventListener('click', function(e) {
-            handleFormSubmit(e, 'regenerate');
-        });
-    }
-    
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', function(e) {
-            handleFormSubmit(e, 'confirm');
-        });
-    }
-    
-    if (rejectBtn) {
-        rejectBtn.addEventListener('click', function(e) {
-            handleFormSubmit(e, 'reject');
-        });
-    }
-});
+// All JavaScript has been moved to confirm_generation.js
 </script>
 {% endblock %}

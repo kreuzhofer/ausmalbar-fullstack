@@ -3,68 +3,75 @@
 
 {% block extrahead %}
     {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="{% static 'coloring_pages/js/progress.js' %}"></script>
+    <script src="{% static 'coloring_pages/js/generate_form.js' %}"></script>
     <style>
-        .submit-row {
-            padding: 12px 14px;
-            margin: 0 0 20px;
-            background: #f8f8f8;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            text-align: right;
-            overflow: hidden;
-        }
-        .submit-row input[type="submit"] {
-            background: #417690;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 400;
-            line-height: 1.5;
-            text-align: center;
-        }
-        .submit-row input[type="submit"]:hover {
-            background: #205067;
-        }
         .form-row {
-            padding: 20px;
-            margin-bottom: 20px;
-            background: #fff;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .form-row:last-child {
+            border-bottom: none;
+        }
+        
+        .form-row label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .form-row input[type="text"],
+        .form-row textarea,
+        .form-row select {
+            width: 100%;
+            padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
-        .form-row label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        .form-row input[type="text"],
+        
         .form-row textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ccc;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .submit-row {
+            margin-top: 20px;
+            text-align: right;
+            padding: 12px 14px;
+            background: #f8f8f8;
+            border: 1px solid #eee;
             border-radius: 4px;
-            font-size: 16px;
-            line-height: 1.5;
-            box-sizing: border-box;
         }
-        .form-row input[type="text"]:focus,
-        .form-row textarea:focus {
-            border-color: #5b80b2;
-            outline: 0;
-            box-shadow: 0 0 0 2px rgba(24, 117, 209, 0.25);
+        
+        .submit-row input[type="submit"] {
+            background-color: #417690;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
-        .content {
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
+        
+        .submit-row input[type="submit"]:hover {
+            background-color: #205067;
         }
-        h1 {
-            margin-bottom: 20px;
+        
+        .submit-row .cancel-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
             color: #333;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+        
+        .submit-row .cancel-link:hover {
+            background: #e0e0e0;
         }
     </style>
 {% endblock %}
@@ -72,6 +79,12 @@
 {% block content %}
     <div class="content">
         <h1>{% trans 'Generate New Coloring Page' %}</h1>
+        
+        {% include "admin/coloring_pages/coloringpage/includes/progress_indicator.html" %}
+        
+        <div id="statusMessage" class="status-message info"></div>
+        </div>
+        
         <form method="post" id="coloringpage_form" novalidate>
             {% csrf_token %}
             {% if form.errors %}
