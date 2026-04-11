@@ -96,9 +96,13 @@ def restore_upload_chunk(request):
 
     session = _upload_sessions[upload_id]
 
-    # Write chunk at correct offset
-    with open(session["filepath"], "ab" if chunk_index > 0 else "wb") as f:
-        chunk_size = int(request.POST.get("chunk_size", chunk.size))
+    # Write chunk at correct offset using r+b (random access).
+    # Create the file first if it doesn't exist.
+    filepath = session["filepath"]
+    if not os.path.exists(filepath):
+        open(filepath, "wb").close()
+    chunk_size = int(request.POST.get("chunk_size", chunk.size))
+    with open(filepath, "r+b") as f:
         f.seek(chunk_index * chunk_size)
         for part in chunk.chunks():
             f.write(part)
