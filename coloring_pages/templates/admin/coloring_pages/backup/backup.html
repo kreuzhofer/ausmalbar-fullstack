@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .backup-container {
+            max-width: 700px;
+            margin: 20px 0;
+        }
+        .backup-info {
+            background: #ffc;
+            padding: 15px 20px;
+            border: 1px solid #dda;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .backup-info ul {
+            margin: 8px 0 0 20px;
+            padding: 0;
+        }
+        .backup-actions {
+            padding: 12px 14px;
+            background: #f8f8f8;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .backup-actions input[type="submit"] {
+            background-color: #417690;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .backup-actions input[type="submit"]:hover {
+            background-color: #205067;
+        }
+        .backup-actions .cancel-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #333;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        .backup-actions .cancel-link:hover {
+            background: #e0e0e0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="backup-container">
+    <h2>{% trans "Create Backup" %}</h2>
+
+    <div class="backup-info">
+        <p>{% trans "This will create a downloadable ZIP archive containing:" %}</p>
+        <ul>
+            <li>{% trans "A full PostgreSQL database dump" %}</li>
+            <li>{% trans "All generated coloring page images and thumbnails" %}</li>
+        </ul>
+        <p>{% trans "You can use this backup to restore the application on a new server." %}</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="backup-actions">
+            <input type="submit" value="{% trans 'Download Backup' %}">
+            <a href="{% url 'admin:index' %}" class="cancel-link">{% trans "Cancel" %}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block content %}
+{{ block.super }}
+
+{% if user.is_superuser %}
+<div id="backup-module" class="module">
+    <table>
+        <caption>
+            <a href="#" class="section" title="{% trans 'Backup & Restore' %}">{% trans "Backup & Restore" %}</a>
+        </caption>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'admin:backup' %}">{% trans "Create Backup" %}</a>
+            </th>
+            <td>
+                <a href="{% url 'admin:backup' %}" class="addlink">{% trans "Download" %}</a>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'admin:restore' %}">{% trans "Restore from Backup" %}</a>
+            </th>
+            <td>
+                <a href="{% url 'admin:restore' %}" class="addlink">{% trans "Upload" %}</a>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

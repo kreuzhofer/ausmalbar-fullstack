@@ -73,6 +73,7 @@ docs/_build/
 debug.log
 
 # Project specific
+backups/
 mediafiles/
 staticfiles/
 *.sqlite3

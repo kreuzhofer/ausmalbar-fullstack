@@ -7,6 +7,8 @@ services:
       - DEBUG=True
       - PYTHONUNBUFFERED=1
       - DJANGO_DEBUG=True
+      - CSRF_COOKIE_SECURE=False
+      - SESSION_COOKIE_SECURE=False
     volumes:
       - .:/app
       - ./media:/app/media

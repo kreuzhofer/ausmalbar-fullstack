@@ -11,6 +11,17 @@ import os
 from coloring_pages.sitemaps import sitemaps
 from coloring_pages.views import sitemap
 from coloring_pages.views.robots import robots
+from coloring_pages.views.admin.backup import get_backup_urls
+
+# Register backup/restore URLs with the admin site
+_original_get_urls = admin.AdminSite.get_urls
+
+
+def _patched_get_urls(self):
+    return get_backup_urls() + _original_get_urls(self)
+
+
+admin.AdminSite.get_urls = _patched_get_urls
 
 # Sitemaps and robots.txt - outside i18n_patterns so they work with any language prefix
 urlpatterns = [
