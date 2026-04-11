@@ -23,7 +23,7 @@ from ...models.system_prompt import SystemPrompt
 from ...models.trend import TrendQuery
 from ...suggestions import generate_suggestions
 from ...trends import get_ungenerated_trends, refresh_trends
-from ...utils import generate_coloring_page_image
+from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
 
 logger = logging.getLogger(__name__)
 
