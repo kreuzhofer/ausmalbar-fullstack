@@ -9,6 +9,21 @@ from PIL import Image
 from django.core.files.base import ContentFile
 from django.conf import settings
 
+_QUALITY_MAP = {
+    'standard': 'auto',
+    'hd': 'high',
+    'low': 'low',
+    'medium': 'medium',
+    'high': 'high',
+    'auto': 'auto',
+}
+
+
+def _map_quality(quality: str) -> str:
+    """Map legacy quality values to current OpenAI API values."""
+    return _QUALITY_MAP.get(quality, 'auto')
+
+
 def generate_titles_and_descriptions(prompt: str) -> tuple[str, str, str, str]:
     """Generate English and German titles and descriptions for the coloring page based on the prompt.
     
@@ -139,13 +154,14 @@ def generate_coloring_page_image(prompt, system_prompt=None, generate_thumbnail=
             # Use the selected system prompt's model (without provider) and prompt text
             model_name = system_prompt.model_name  # Just use the model name without provider
             prompt_text = system_prompt.prompt % {'prompt': prompt}
-            # Use the quality setting from the system prompt, default to 'standard' if not set
-            quality = getattr(system_prompt, 'quality', 'standard')
+            # Use the quality setting from the system prompt, mapped to current API values
+            raw_quality = getattr(system_prompt, 'quality', 'auto')
+            quality = _map_quality(raw_quality)
         else:
             # Fall back to default behavior
             model_name = "gpt-image-1"
             prompt_text = get_coloring_page_prompt(prompt)
-            quality = 'standard'  # Default quality if no system prompt
+            quality = 'auto'
             
         response = client.images.generate(
             model=model_name,

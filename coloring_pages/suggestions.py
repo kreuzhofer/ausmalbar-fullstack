@@ -39,7 +39,7 @@ Guidelines:
 - Mix trending topics with evergreen children's favorites
 - Image prompts should describe LINE ART suitable for coloring: clear outlines, no shading, no color
 
-Respond with a JSON array only, no other text. Each element:
+You MUST respond with a JSON object containing a "suggestions" key with an array of exactly the requested number of suggestions. Each element:
 {
   "image_prompt": "detailed line art description...",
   "title_en": "English Title",
@@ -92,7 +92,7 @@ def generate_suggestions(count=5):
 ## Existing Coloring Pages (avoid duplicating these)
 {existing_text}
 
-Please suggest {count} new coloring page ideas. Return JSON array only."""
+Please suggest exactly {count} new coloring page ideas. Return a JSON object: {{"suggestions": [...]}} with {count} items."""
 
     logger.info("Generating %d AI suggestions...", count)
     logger.info("Context: %d unmet queries, %d trends", len(unmet), len(trends))
