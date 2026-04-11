@@ -217,6 +217,14 @@ def demand_approve_suggestion(request):
         logger.info("Generating image from AI suggestion: %s", image_prompt[:80])
         result = generate_coloring_page_image(image_prompt)
 
+        img_bytes = result["image_bytes"]
+        thumb_bytes = result.get("thumbnail_bytes")
+        logger.info(
+            "Image generated: %d bytes, thumbnail: %s",
+            len(img_bytes) if img_bytes else 0,
+            f"{len(thumb_bytes)} bytes" if thumb_bytes else "none",
+        )
+
         page = ColoringPage(
             title_en=title_en[:200] or "Untitled",
             title_de=title_de[:200] or "Ohne Titel",
@@ -227,11 +235,16 @@ def demand_approve_suggestion(request):
             metadata={"source": "ai_suggestion"},
         )
         img_name = f"coloring_ai_{title_en[:30].replace(' ', '_')}.png"
-        page.image.save(img_name, ContentFile(result["image_bytes"]), save=False)
-        if result.get("thumbnail_bytes"):
+        page.image.save(img_name, ContentFile(img_bytes), save=False)
+        if thumb_bytes:
             thumb_name = f"thumb_ai_{title_en[:30].replace(' ', '_')}.png"
-            page.thumbnail.save(thumb_name, ContentFile(result["thumbnail_bytes"]), save=False)
+            page.thumbnail.save(thumb_name, ContentFile(thumb_bytes), save=False)
         page.save()
+
+        logger.info(
+            "Draft saved: id=%d, image=%s, thumbnail=%s",
+            page.pk, page.image.name, page.thumbnail.name if page.thumbnail else "none",
+        )
 
         # Generate embedding for the new page
         try:
