@@ -1,32 +1,22 @@
 """
 Enable pgvector extension and add embedding field to ColoringPage.
-On PostgreSQL: creates a vector(3072) column.
-On SQLite (tests): creates a nullable text column as placeholder.
+On PostgreSQL: creates a proper vector(3072) column.
+On SQLite (tests): standard AddField creates a compatible column.
 """
-from django.db import connection, migrations, models
+from django.db import connection, migrations
+
+from pgvector.django import VectorField
 
 
-def enable_pgvector(apps, schema_editor):
-    """Only run CREATE EXTENSION on PostgreSQL."""
+def enable_pgvector_extension(apps, schema_editor):
+    """Enable the vector extension on PostgreSQL only."""
     if connection.vendor == "postgresql":
         schema_editor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
 
-def disable_pgvector(apps, schema_editor):
+def disable_pgvector_extension(apps, schema_editor):
     if connection.vendor == "postgresql":
         schema_editor.execute("DROP EXTENSION IF EXISTS vector;")
-
-
-def add_vector_column(apps, schema_editor):
-    """
-    After Django adds the BinaryField column, alter it to vector type on PostgreSQL.
-    On SQLite this is a no-op (the BinaryField column already exists).
-    """
-    if connection.vendor == "postgresql":
-        schema_editor.execute(
-            "ALTER TABLE coloring_pages_coloringpage "
-            "ALTER COLUMN embedding TYPE vector(3072) USING embedding::vector(3072);"
-        )
 
 
 class Migration(migrations.Migration):
@@ -36,13 +26,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(enable_pgvector, disable_pgvector),
-        # Add a standard nullable column first (works on all backends)
+        # Step 1: Enable pgvector extension (no-op on SQLite)
+        migrations.RunPython(enable_pgvector_extension, disable_pgvector_extension),
+        # Step 2: Add the field. VectorField maps to vector(3072) on PostgreSQL
+        # and falls back gracefully on SQLite.
         migrations.AddField(
             model_name='coloringpage',
             name='embedding',
-            field=models.BinaryField(null=True, blank=True),
+            field=VectorField(dimensions=3072, null=True, blank=True),
         ),
-        # On PostgreSQL, convert it to a proper vector column
-        migrations.RunPython(add_vector_column, migrations.RunPython.noop),
     ]
