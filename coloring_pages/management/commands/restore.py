@@ -157,10 +157,24 @@ class Command(BaseCommand):
                 media_root = settings.MEDIA_ROOT
                 self.stdout.write(f"  Restoring {media_count} media files...")
 
-                # Clear existing media
+                # Clear existing media contents (not the dir itself — it may be a mount)
                 if os.path.isdir(media_root):
-                    shutil.rmtree(media_root)
-                shutil.copytree(extracted_media, media_root)
+                    for entry in os.listdir(media_root):
+                        entry_path = os.path.join(media_root, entry)
+                        if os.path.isdir(entry_path):
+                            shutil.rmtree(entry_path)
+                        else:
+                            os.remove(entry_path)
+                else:
+                    os.makedirs(media_root)
+                # Copy restored media into the directory
+                for entry in os.listdir(extracted_media):
+                    src = os.path.join(extracted_media, entry)
+                    dst = os.path.join(media_root, entry)
+                    if os.path.isdir(src):
+                        shutil.copytree(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
                 self.stdout.write(self.style.SUCCESS("  Media files restored."))
             else:
                 self.stdout.write("  No media files in backup.")
