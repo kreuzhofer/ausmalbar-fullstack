@@ -16,12 +16,14 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 from ...demand import get_unmet_queries
+from ...embeddings import embed_all_pages, embed_coloring_page
 from ...models.coloring_page import ColoringPage
 from ...models.schedule import GenerationSchedule
 from ...models.system_prompt import SystemPrompt
 from ...models.trend import TrendQuery
+from ...suggestions import generate_suggestions
 from ...trends import get_ungenerated_trends, refresh_trends
-from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
+from ...utils import generate_coloring_page_image
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +182,83 @@ def demand_schedule_save(request):
     })
 
 
+@require_POST
+def demand_ai_suggestions(request):
+    """Generate AI-powered coloring page suggestions."""
+    data = json.loads(request.body)
+    count = min(int(data.get("count", 5)), 10)
+    try:
+        suggestions = generate_suggestions(count=count)
+        return JsonResponse({"success": True, "suggestions": suggestions})
+    except Exception as e:
+        logger.exception("Failed to generate AI suggestions")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+def demand_approve_suggestion(request):
+    """Approve an AI suggestion: generate the image and create a draft page."""
+    data = json.loads(request.body)
+    image_prompt = data.get("image_prompt", "").strip()
+    title_en = data.get("title_en", "").strip()
+    title_de = data.get("title_de", "").strip()
+    description_en = data.get("description_en", "").strip()
+    description_de = data.get("description_de", "").strip()
+
+    if not image_prompt:
+        return JsonResponse({"error": "No image prompt"}, status=400)
+
+    try:
+        logger.info("Generating image from AI suggestion: %s", image_prompt[:80])
+        result = generate_coloring_page_image(image_prompt)
+
+        page = ColoringPage(
+            title_en=title_en[:200] or "Untitled",
+            title_de=title_de[:200] or "Ohne Titel",
+            description_en=description_en or title_en,
+            description_de=description_de or title_de,
+            prompt=image_prompt,
+            status=ColoringPage.STATUS_DRAFT,
+            metadata={"source": "ai_suggestion"},
+        )
+        img_name = f"coloring_ai_{title_en[:30].replace(' ', '_')}.png"
+        page.image.save(img_name, ContentFile(result["image_bytes"]), save=False)
+        if result.get("thumbnail_bytes"):
+            thumb_name = f"thumb_ai_{title_en[:30].replace(' ', '_')}.png"
+            page.thumbnail.save(thumb_name, ContentFile(result["thumbnail_bytes"]), save=False)
+        page.save()
+
+        # Generate embedding for the new page
+        try:
+            embed_coloring_page(page)
+        except Exception:
+            logger.warning("Failed to embed new page %d", page.pk)
+
+        return JsonResponse({
+            "success": True,
+            "page_id": page.pk,
+            "title": page.title_en,
+        })
+    except Exception as e:
+        logger.exception("Failed to generate image from AI suggestion")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+def demand_embed_all(request):
+    """Trigger embedding generation for all pages."""
+    def _run():
+        try:
+            count = embed_all_pages()
+            logger.info("Embed all pages complete: %d pages", count)
+        except Exception:
+            logger.exception("Embed all pages failed")
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    return JsonResponse({"success": True, "message": "Embedding generation started in background..."})
+
+
 def get_demand_urls():
     """Return URL patterns for the demand dashboard."""
     return [
@@ -207,5 +286,20 @@ def get_demand_urls():
             "demand/refresh-trends/",
             admin.site.admin_view(demand_refresh_trends),
             name="demand_refresh_trends",
+        ),
+        path(
+            "demand/ai-suggestions/",
+            admin.site.admin_view(demand_ai_suggestions),
+            name="demand_ai_suggestions",
+        ),
+        path(
+            "demand/approve-suggestion/",
+            admin.site.admin_view(demand_approve_suggestion),
+            name="demand_approve_suggestion",
+        ),
+        path(
+            "demand/embed-all/",
+            admin.site.admin_view(demand_embed_all),
+            name="demand_embed_all",
         ),
     ]

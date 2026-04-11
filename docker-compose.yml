@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:13
+    image: pgvector/pgvector:pg13
     env_file:
       - .env.production
     environment:

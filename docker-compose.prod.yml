@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:13
+    image: pgvector/pgvector:pg13
     environment:
       - POSTGRES_USER=${DB_USER:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD}

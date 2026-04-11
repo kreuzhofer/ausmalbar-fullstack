@@ -43,12 +43,60 @@
 
     /* Empty state */
     .empty-state { padding: 30px; text-align: center; color: #999; background: #f8f8f8; border-radius: 4px; }
+
+    /* AI Suggestion cards */
+    .suggestion-card {
+        background: #fff; border: 1px solid #ddd; border-radius: 6px;
+        padding: 15px; margin-bottom: 12px; position: relative;
+    }
+    .suggestion-card .reasoning {
+        font-size: 12px; color: #666; font-style: italic;
+        margin-bottom: 8px; padding: 6px 10px; background: #f0f8ff; border-radius: 3px;
+    }
+    .suggestion-card .prompt-text {
+        font-size: 13px; color: #333; margin-bottom: 8px;
+        padding: 8px; background: #f8f8f8; border-radius: 3px; border-left: 3px solid #417690;
+    }
+    .suggestion-card .titles { font-size: 13px; margin-bottom: 8px; }
+    .suggestion-card .titles strong { color: #417690; }
+    .suggestion-actions { display: flex; gap: 8px; align-items: center; }
+    .btn-approve { background: #4a9c5d; color: white; }
+    .btn-approve:hover { background: #3a7c4d; }
+    .btn-dismiss { background: #999; color: white; }
+    .btn-dismiss:hover { background: #777; }
+    .suggestion-loading { text-align: center; padding: 30px; color: #666; }
+    #suggestionsContainer .gen-status { margin-left: 8px; }
+
+    /* Tools bar */
+    .tools-bar {
+        background: #f0f0f0; padding: 10px 15px; border-radius: 4px;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="demand-container">
     <h2>{% trans "Demand Analysis & Auto-Generation" %}</h2>
+
+    <!-- Tools -->
+    <div class="tools-bar">
+        <button type="button" class="btn btn-primary" id="embedAllBtn">{% trans "Embed All Pages" %}</button>
+        <span id="embedStatus" class="gen-status"></span>
+    </div>
+
+    <!-- AI Suggestions -->
+    <div class="section">
+        <h3>{% trans "AI Suggestions" %}</h3>
+        <p style="color:#666;font-size:13px;margin-bottom:10px;">
+            {% trans "GPT analyses your search queries, Google Trends, seasonality, and existing content to suggest new coloring pages." %}
+        </p>
+        <div style="margin-bottom:15px;">
+            <button type="button" class="btn btn-success" id="generateSuggestionsBtn">{% trans "Generate Suggestions" %}</button>
+            <span id="suggestionsStatus" class="gen-status"></span>
+        </div>
+        <div id="suggestionsContainer"></div>
+    </div>
 
     <!-- Schedule Configuration -->
     <div class="section">
@@ -322,6 +370,110 @@
                 statusEl.className = 'gen-status error';
                 this.disabled = false;
             }
+        } catch(e) {
+            statusEl.textContent = e.message;
+            statusEl.className = 'gen-status error';
+            this.disabled = false;
+        }
+    });
+
+    // Embed all pages
+    document.getElementById('embedAllBtn').addEventListener('click', async function() {
+        const statusEl = document.getElementById('embedStatus');
+        this.disabled = true;
+        statusEl.textContent = '{% trans "Generating embeddings..." %}';
+        statusEl.className = 'gen-status';
+        try {
+            const resp = await fetch('{% url "admin:demand_embed_all" %}', {method: 'POST', headers, body: '{}'});
+            const data = await resp.json();
+            if (resp.ok) {
+                statusEl.textContent = data.message;
+                statusEl.className = 'gen-status success';
+            } else {
+                statusEl.textContent = data.error || '{% trans "Failed" %}';
+                statusEl.className = 'gen-status error';
+                this.disabled = false;
+            }
+        } catch(e) { statusEl.textContent = e.message; statusEl.className = 'gen-status error'; this.disabled = false; }
+    });
+
+    // AI Suggestions
+    document.getElementById('generateSuggestionsBtn').addEventListener('click', async function() {
+        const statusEl = document.getElementById('suggestionsStatus');
+        const container = document.getElementById('suggestionsContainer');
+        this.disabled = true;
+        statusEl.textContent = '{% trans "Asking GPT for suggestions (this may take a moment)..." %}';
+        statusEl.className = 'gen-status';
+        container.innerHTML = '';
+
+        try {
+            const resp = await fetch('{% url "admin:demand_ai_suggestions" %}', {
+                method: 'POST', headers, body: JSON.stringify({count: 5}),
+            });
+            const data = await resp.json();
+            this.disabled = false;
+
+            if (!resp.ok) {
+                statusEl.textContent = data.error || '{% trans "Failed" %}';
+                statusEl.className = 'gen-status error';
+                return;
+            }
+
+            statusEl.textContent = data.suggestions.length + ' {% trans "suggestions generated" %}';
+            statusEl.className = 'gen-status success';
+
+            data.suggestions.forEach((s, i) => {
+                const card = document.createElement('div');
+                card.className = 'suggestion-card';
+                card.innerHTML = `
+                    <div class="reasoning">${s.reasoning || ''}</div>
+                    <div class="titles"><strong>EN:</strong> ${s.title_en} | <strong>DE:</strong> ${s.title_de}</div>
+                    <div class="prompt-text">${s.image_prompt}</div>
+                    <div class="suggestion-actions">
+                        <button type="button" class="btn btn-approve btn-sm approve-btn">{% trans "Approve & Generate" %}</button>
+                        <button type="button" class="btn btn-dismiss btn-sm dismiss-btn">{% trans "Dismiss" %}</button>
+                        <span class="gen-status"></span>
+                    </div>
+                `;
+                // Store data on the card
+                card.dataset.suggestion = JSON.stringify(s);
+                container.appendChild(card);
+            });
+
+            // Bind approve buttons
+            container.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const card = this.closest('.suggestion-card');
+                    const s = JSON.parse(card.dataset.suggestion);
+                    const st = card.querySelector('.gen-status');
+                    this.disabled = true;
+                    st.textContent = '{% trans "Generating image..." %}';
+                    st.className = 'gen-status';
+                    try {
+                        const r = await fetch('{% url "admin:demand_approve_suggestion" %}', {
+                            method: 'POST', headers, body: JSON.stringify(s),
+                        });
+                        const d = await r.json();
+                        if (r.ok) {
+                            st.textContent = '{% trans "Draft created:" %} ' + d.title;
+                            st.className = 'gen-status success';
+                            card.style.opacity = '0.5';
+                        } else {
+                            st.textContent = d.error || '{% trans "Failed" %}';
+                            st.className = 'gen-status error';
+                            this.disabled = false;
+                        }
+                    } catch(e) { st.textContent = e.message; st.className = 'gen-status error'; this.disabled = false; }
+                });
+            });
+
+            // Bind dismiss buttons
+            container.querySelectorAll('.dismiss-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.suggestion-card').remove();
+                });
+            });
+
         } catch(e) {
             statusEl.textContent = e.message;
             statusEl.className = 'gen-status error';

@@ -11,6 +11,11 @@ from django.utils import timezone
 from django.utils.translation import get_language, gettext_lazy as _
 from PIL import Image
 
+try:
+    from pgvector.django import VectorField
+except ImportError:
+    VectorField = None
+
 from .base import TimeStampedModel, create_unique_slug
 
 
@@ -18,6 +23,8 @@ class ColoringPage(TimeStampedModel):
     """
     Represents a coloring page with multilingual content.
     """
+    EMBEDDING_DIMENSIONS = 3072
+
     STATUS_DRAFT = 'draft'
     STATUS_PUBLISHED = 'published'
     STATUS_CHOICES = [
@@ -36,20 +43,26 @@ class ColoringPage(TimeStampedModel):
     # English fields
     title_en = models.CharField(max_length=200, verbose_name=_('Title (English)'))
     description_en = models.TextField(verbose_name=_('Description (English)'))
-    
+
     # German fields
     title_de = models.CharField(max_length=200, verbose_name=_('Title (German)'))
     description_de = models.TextField(verbose_name=_('Description (German)'))
-    
+
     # Common fields
     prompt = models.TextField()
     image = models.ImageField(upload_to='coloring_pages/')
     thumbnail = models.ImageField(upload_to='coloring_pages/thumbnails/', blank=True)
-    seo_url_en = models.SlugField(max_length=255, unique=True, blank=True, null=True, 
+    seo_url_en = models.SlugField(max_length=255, unique=True, blank=True, null=True,
                                  verbose_name=_('SEO URL (English)'))
-    seo_url_de = models.SlugField(max_length=255, unique=True, blank=True, null=True, 
+    seo_url_de = models.SlugField(max_length=255, unique=True, blank=True, null=True,
                                  verbose_name=_('SEO URL (German)'))
-    
+
+    # Vector embedding for semantic search (pgvector on PostgreSQL, ignored on SQLite)
+    if VectorField is not None:
+        embedding = VectorField(dimensions=3072, null=True, blank=True)
+    else:
+        embedding = models.BinaryField(null=True, blank=True)
+
     # Metadata for additional data like system prompt information
     metadata = models.JSONField(blank=True, null=True, default=dict,
                               help_text=_('Additional metadata stored as JSON'))

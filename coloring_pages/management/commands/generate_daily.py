@@ -7,10 +7,12 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 
 from ...demand import get_unmet_queries
+from ...embeddings import embed_coloring_page
 from ...models.coloring_page import ColoringPage
 from ...models.system_prompt import SystemPrompt
+from ...suggestions import generate_suggestions
 from ...trends import get_ungenerated_trends, refresh_trends
-from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
+from ...utils import generate_coloring_page_image
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--source",
             type=str,
-            default="all",
-            choices=["all", "queries", "trends"],
-            help="Source of generation ideas: all, queries, or trends (default: all).",
+            default="ai",
+            choices=["ai", "all", "queries", "trends"],
+            help="Source: ai (GPT suggestions, default), all (queries+trends), queries, trends.",
         )
 
     def handle(self, *args, **options):
@@ -67,8 +69,89 @@ class Command(BaseCommand):
 
         source = options["source"]
 
-        # Build generation queue from selected sources
-        queue = []  # list of (query, source_label, extra_meta)
+        if source == "ai":
+            self._run_ai_pipeline(count, system_prompt, status)
+        else:
+            self._run_legacy_pipeline(source, count, system_prompt, status)
+
+    def _run_ai_pipeline(self, count, system_prompt, status):
+        """AI-driven pipeline: GPT suggests, we generate images."""
+        self.stdout.write("Refreshing trends data...")
+        refresh_trends()
+
+        self.stdout.write(f"Asking GPT for {count} suggestions...")
+        suggestions = generate_suggestions(count=count)
+
+        if not suggestions:
+            self.stdout.write(self.style.WARNING("No AI suggestions generated."))
+            return
+
+        self.stdout.write(f"Got {len(suggestions)} suggestions:")
+        for s in suggestions:
+            self.stdout.write(f"  - \"{s.get('title_en', '?')}\"")
+
+        generated = 0
+        for s in suggestions:
+            prompt = s.get("image_prompt", "")
+            title_en = s.get("title_en", "Untitled")
+            self.stdout.write(f"\nGenerating: \"{title_en}\"...")
+
+            try:
+                result = generate_coloring_page_image(
+                    prompt, system_prompt=system_prompt
+                )
+
+                page = ColoringPage(
+                    title_en=title_en[:200],
+                    title_de=s.get("title_de", title_en)[:200],
+                    description_en=s.get("description_en", ""),
+                    description_de=s.get("description_de", ""),
+                    prompt=prompt,
+                    status=status,
+                    metadata={
+                        "source": "ai_suggestion",
+                        "reasoning": s.get("reasoning", ""),
+                        "system_prompt_name": (
+                            system_prompt.name if system_prompt else "default"
+                        ),
+                    },
+                )
+
+                img_name = f"coloring_ai_{title_en[:30].replace(' ', '_')}.png"
+                page.image.save(
+                    img_name, ContentFile(result["image_bytes"]), save=False
+                )
+                if result.get("thumbnail_bytes"):
+                    thumb_name = f"thumb_ai_{title_en[:30].replace(' ', '_')}.png"
+                    page.thumbnail.save(
+                        thumb_name,
+                        ContentFile(result["thumbnail_bytes"]),
+                        save=False,
+                    )
+                page.save()
+
+                # Generate embedding
+                try:
+                    embed_coloring_page(page)
+                except Exception:
+                    logger.warning("Failed to embed page %d", page.pk)
+
+                generated += 1
+                self.stdout.write(
+                    self.style.SUCCESS(f"  Created: {page.title_en} (status={page.status})")
+                )
+
+            except Exception as e:
+                logger.exception("Failed to generate: %s", title_en)
+                self.stdout.write(self.style.ERROR(f"  Failed: {e}"))
+
+        self.stdout.write(
+            self.style.SUCCESS(f"\nDone. Generated {generated}/{len(suggestions)} pages as {status}.")
+        )
+
+    def _run_legacy_pipeline(self, source, count, system_prompt, status):
+        """Legacy pipeline: direct query/trend to image generation."""
+        queue = []
 
         if source in ("all", "queries"):
             unmet = get_unmet_queries(limit=count)
@@ -76,7 +159,6 @@ class Command(BaseCommand):
                 queue.append((entry["query"], "search", {"search_count": entry["count"]}))
 
         if source in ("all", "trends"):
-            # Refresh trends data before picking
             refresh_trends()
             remaining = count - len(queue)
             if remaining > 0:
@@ -97,22 +179,9 @@ class Command(BaseCommand):
             self.stdout.write(f"\nGenerating: \"{query}\" [{src}]...")
 
             try:
-                title_en, title_de, desc_en, desc_de = (
-                    generate_titles_and_descriptions(query)
-                )
-                self.stdout.write(f"  Titles: EN=\"{title_en}\" / DE=\"{title_de}\"")
-
-                result = generate_coloring_page_image(
-                    query, system_prompt=system_prompt
-                )
-
-                meta = {
-                    "source": f"auto_{src}",
-                    "system_prompt_name": (
-                        system_prompt.name if system_prompt else "default"
-                    ),
-                    **extra_meta,
-                }
+                from ...utils import generate_titles_and_descriptions
+                title_en, title_de, desc_en, desc_de = generate_titles_and_descriptions(query)
+                result = generate_coloring_page_image(query, system_prompt=system_prompt)
 
                 page = ColoringPage(
                     title_en=title_en[:200],
@@ -121,43 +190,30 @@ class Command(BaseCommand):
                     description_de=desc_de,
                     prompt=query,
                     status=status,
-                    metadata=meta,
+                    metadata={"source": f"auto_{src}", **extra_meta},
                 )
 
-                img_name = f"coloring_page_auto_{query[:30].replace(' ', '_')}.png"
-                page.image.save(
-                    img_name, ContentFile(result["image_bytes"]), save=False
-                )
+                img_name = f"coloring_auto_{query[:30].replace(' ', '_')}.png"
+                page.image.save(img_name, ContentFile(result["image_bytes"]), save=False)
                 if result.get("thumbnail_bytes"):
                     thumb_name = f"thumb_auto_{query[:30].replace(' ', '_')}.png"
-                    page.thumbnail.save(
-                        thumb_name,
-                        ContentFile(result["thumbnail_bytes"]),
-                        save=False,
-                    )
-
+                    page.thumbnail.save(thumb_name, ContentFile(result["thumbnail_bytes"]), save=False)
                 page.save()
-                generated += 1
 
-                # Mark trend as generated
+                try:
+                    embed_coloring_page(page)
+                except Exception:
+                    logger.warning("Failed to embed page %d", page.pk)
+
+                generated += 1
                 if "trend_id" in extra_meta:
                     from ...models.trend import TrendQuery
                     TrendQuery.objects.filter(pk=extra_meta["trend_id"]).update(generated=True)
 
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"  Created: {page.title_en} (status={page.status})"
-                    )
-                )
+                self.stdout.write(self.style.SUCCESS(f"  Created: {page.title_en} (status={page.status})"))
 
             except Exception as e:
                 logger.exception("Failed to generate page for query: %s", query)
-                self.stdout.write(
-                    self.style.ERROR(f"  Failed: {e}")
-                )
+                self.stdout.write(self.style.ERROR(f"  Failed: {e}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"\nDone. Generated {generated}/{len(queue)} pages as {status}."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"\nDone. Generated {generated}/{len(queue)} pages as {status}."))
