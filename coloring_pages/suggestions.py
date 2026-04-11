@@ -95,7 +95,7 @@ def generate_suggestions(count=5):
 Please suggest {count} new coloring page ideas. Return JSON array only."""
 
     logger.info("Generating %d AI suggestions...", count)
-    logger.debug("Suggestion prompt context: %d unmet queries, %d trends", len(unmet), len(trends))
+    logger.info("Context: %d unmet queries, %d trends", len(unmet), len(trends))
 
     try:
         response = client.chat.completions.create(
@@ -110,22 +110,33 @@ Please suggest {count} new coloring page ideas. Return JSON array only."""
         )
 
         content = response.choices[0].message.content.strip()
+        logger.info("GPT response (first 500 chars): %s", content[:500])
+
         parsed = json.loads(content)
 
-        # Handle both {"suggestions": [...]} and [...] formats
+        # Handle various JSON wrapper formats GPT might use
         if isinstance(parsed, dict):
-            suggestions = parsed.get("suggestions", parsed.get("ideas", []))
+            # Try common wrapper keys
+            for key in ("suggestions", "ideas", "coloring_pages", "pages", "results"):
+                if key in parsed and isinstance(parsed[key], list):
+                    suggestions = parsed[key]
+                    logger.info("Found %d suggestions under key '%s'", len(suggestions), key)
+                    return suggestions[:count]
+            # If dict has the expected fields directly, wrap it as single suggestion
+            if "image_prompt" in parsed:
+                logger.info("Response is a single suggestion dict, wrapping in list")
+                return [parsed]
+            logger.error("No recognized key in GPT response. Keys: %s", list(parsed.keys()))
+            return []
         elif isinstance(parsed, list):
-            suggestions = parsed
+            logger.info("Generated %d AI suggestions (direct array)", len(parsed))
+            return parsed[:count]
         else:
-            logger.error("Unexpected GPT response format: %s", type(parsed))
+            logger.error("Unexpected GPT response type: %s", type(parsed))
             return []
 
-        logger.info("Generated %d AI suggestions", len(suggestions))
-        return suggestions[:count]
-
-    except json.JSONDecodeError:
-        logger.exception("Failed to parse GPT response as JSON")
+    except json.JSONDecodeError as e:
+        logger.exception("Failed to parse GPT response as JSON: %s", content[:300] if content else "empty")
         return []
     except Exception:
         logger.exception("Failed to generate AI suggestions")
