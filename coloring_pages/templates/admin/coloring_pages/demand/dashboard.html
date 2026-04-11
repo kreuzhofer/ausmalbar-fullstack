@@ -129,6 +129,83 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Google Trends -->
+    <div class="section">
+        <h3>{% trans "Google Trends" %}</h3>
+
+        <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+            <button type="button" class="btn btn-primary" id="refreshTrendsBtn">{% trans "Refresh Trends" %}</button>
+            <span id="trendsRefreshStatus" class="gen-status"></span>
+            {% if trends_last_fetched %}
+                <span class="gen-status">{% trans "Last fetched:" %} {{ trends_last_fetched|date:"Y-m-d H:i" }}</span>
+            {% endif %}
+        </div>
+
+        {% if trends_de %}
+        <h4>{% trans "Related to coloring pages (Germany)" %}</h4>
+        <table class="demand-table">
+            <thead>
+                <tr>
+                    <th>{% trans "Query" %}</th>
+                    <th>{% trans "Score" %}</th>
+                    <th>{% trans "Action" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trend in trends_de %}
+                <tr data-query="{{ trend.query }}" data-trend-id="{{ trend.pk }}" {% if trend.generated %}style="opacity: 0.5;"{% endif %}>
+                    <td class="query-text">{{ trend.query }}</td>
+                    <td><span class="count-badge">{{ trend.score }}</span></td>
+                    <td>
+                        {% if trend.generated %}
+                            <span class="gen-status success">{% trans "Generated" %}</span>
+                        {% else %}
+                            <button type="button" class="btn btn-primary btn-sm generate-trend-btn">{% trans "Generate" %}</button>
+                            <span class="gen-status"></span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if trends_en %}
+        <h4 style="margin-top: 20px;">{% trans "Related to coloring pages (Worldwide)" %}</h4>
+        <table class="demand-table">
+            <thead>
+                <tr>
+                    <th>{% trans "Query" %}</th>
+                    <th>{% trans "Score" %}</th>
+                    <th>{% trans "Action" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trend in trends_en %}
+                <tr data-query="{{ trend.query }}" data-trend-id="{{ trend.pk }}" {% if trend.generated %}style="opacity: 0.5;"{% endif %}>
+                    <td class="query-text">{{ trend.query }}</td>
+                    <td><span class="count-badge">{{ trend.score }}</span></td>
+                    <td>
+                        {% if trend.generated %}
+                            <span class="gen-status success">{% trans "Generated" %}</span>
+                        {% else %}
+                            <button type="button" class="btn btn-primary btn-sm generate-trend-btn">{% trans "Generate" %}</button>
+                            <span class="gen-status"></span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if not trends_de and not trends_en %}
+        <div class="empty-state">
+            {% trans "No trends data yet. Click 'Refresh Trends' to fetch from Google Trends." %}
+        </div>
+        {% endif %}
+    </div>
 </div>
 
 <script>
@@ -223,6 +300,67 @@
             }
         });
     }
+
+    // Refresh trends
+    document.getElementById('refreshTrendsBtn').addEventListener('click', async function() {
+        const statusEl = document.getElementById('trendsRefreshStatus');
+        this.disabled = true;
+        statusEl.textContent = '{% trans "Fetching trends from Google..." %}';
+        statusEl.className = 'gen-status';
+        try {
+            const resp = await fetch('{% url "admin:demand_refresh_trends" %}', {
+                method: 'POST', headers,
+                body: '{}',
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                statusEl.textContent = '{% trans "Done!" %} ' + data.new_trends + ' {% trans "new trends." %}';
+                statusEl.className = 'gen-status success';
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                statusEl.textContent = data.error || '{% trans "Failed" %}';
+                statusEl.className = 'gen-status error';
+                this.disabled = false;
+            }
+        } catch(e) {
+            statusEl.textContent = e.message;
+            statusEl.className = 'gen-status error';
+            this.disabled = false;
+        }
+    });
+
+    // Generate from trend
+    document.querySelectorAll('.generate-trend-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const row = this.closest('tr');
+            const query = row.dataset.query;
+            const trendId = row.dataset.trendId;
+            const statusEl = row.querySelector('.gen-status');
+            this.disabled = true;
+            statusEl.textContent = '{% trans "Generating..." %}';
+            statusEl.className = 'gen-status';
+            try {
+                const resp = await fetch('{% url "admin:demand_generate" %}', {
+                    method: 'POST', headers,
+                    body: JSON.stringify({query, trend_id: trendId}),
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    statusEl.textContent = '{% trans "Draft created:" %} ' + data.title;
+                    statusEl.className = 'gen-status success';
+                    row.style.opacity = '0.5';
+                } else {
+                    statusEl.textContent = data.error || '{% trans "Failed" %}';
+                    statusEl.className = 'gen-status error';
+                    this.disabled = false;
+                }
+            } catch(e) {
+                statusEl.textContent = e.message;
+                statusEl.className = 'gen-status error';
+                this.disabled = false;
+            }
+        });
+    });
 })();
 </script>
 {% endblock %}

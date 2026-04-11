@@ -9,6 +9,7 @@ from django.core.management.base import BaseCommand
 from ...demand import get_unmet_queries
 from ...models.coloring_page import ColoringPage
 from ...models.system_prompt import SystemPrompt
+from ...trends import get_ungenerated_trends, refresh_trends
 from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,13 @@ class Command(BaseCommand):
             default=False,
             help="Publish pages immediately instead of saving as drafts.",
         )
+        parser.add_argument(
+            "--source",
+            type=str,
+            default="all",
+            choices=["all", "queries", "trends"],
+            help="Source of generation ideas: all, queries, or trends (default: all).",
+        )
 
     def handle(self, *args, **options):
         count = options["count"]
@@ -57,34 +65,55 @@ class Command(BaseCommand):
                 )
             )
 
-        # Find unmet queries
-        unmet = get_unmet_queries(limit=count)
-        if not unmet:
-            self.stdout.write(self.style.WARNING("No unmet queries found."))
+        source = options["source"]
+
+        # Build generation queue from selected sources
+        queue = []  # list of (query, source_label, extra_meta)
+
+        if source in ("all", "queries"):
+            unmet = get_unmet_queries(limit=count)
+            for entry in unmet:
+                queue.append((entry["query"], "search", {"search_count": entry["count"]}))
+
+        if source in ("all", "trends"):
+            # Refresh trends data before picking
+            refresh_trends()
+            remaining = count - len(queue)
+            if remaining > 0:
+                trends = get_ungenerated_trends(limit=remaining)
+                for trend in trends:
+                    queue.append((trend.query, "trend", {"trend_id": trend.pk, "trend_score": trend.score}))
+
+        if not queue:
+            self.stdout.write(self.style.WARNING("No queries or trends to generate from."))
             return
 
-        self.stdout.write(f"Found {len(unmet)} unmet queries to generate:")
-        for entry in unmet:
-            self.stdout.write(f"  - \"{entry['query']}\" ({entry['count']} searches)")
+        self.stdout.write(f"Generation queue ({len(queue)} items):")
+        for query, src, _ in queue:
+            self.stdout.write(f"  - [{src}] \"{query}\"")
 
         generated = 0
-        for entry in unmet:
-            query = entry["query"]
-            self.stdout.write(f"\nGenerating: \"{query}\"...")
+        for query, src, extra_meta in queue:
+            self.stdout.write(f"\nGenerating: \"{query}\" [{src}]...")
 
             try:
-                # Generate titles and descriptions
                 title_en, title_de, desc_en, desc_de = (
                     generate_titles_and_descriptions(query)
                 )
                 self.stdout.write(f"  Titles: EN=\"{title_en}\" / DE=\"{title_de}\"")
 
-                # Generate image
                 result = generate_coloring_page_image(
                     query, system_prompt=system_prompt
                 )
 
-                # Create ColoringPage as draft
+                meta = {
+                    "source": f"auto_{src}",
+                    "system_prompt_name": (
+                        system_prompt.name if system_prompt else "default"
+                    ),
+                    **extra_meta,
+                }
+
                 page = ColoringPage(
                     title_en=title_en[:200],
                     title_de=title_de[:200],
@@ -92,22 +121,13 @@ class Command(BaseCommand):
                     description_de=desc_de,
                     prompt=query,
                     status=status,
-                    metadata={
-                        "source": "auto_generated",
-                        "search_count": entry["count"],
-                        "system_prompt_name": (
-                            system_prompt.name if system_prompt else "default"
-                        ),
-                    },
+                    metadata=meta,
                 )
 
-                # Save image
                 img_name = f"coloring_page_auto_{query[:30].replace(' ', '_')}.png"
                 page.image.save(
                     img_name, ContentFile(result["image_bytes"]), save=False
                 )
-
-                # Save thumbnail
                 if result.get("thumbnail_bytes"):
                     thumb_name = f"thumb_auto_{query[:30].replace(' ', '_')}.png"
                     page.thumbnail.save(
@@ -118,6 +138,12 @@ class Command(BaseCommand):
 
                 page.save()
                 generated += 1
+
+                # Mark trend as generated
+                if "trend_id" in extra_meta:
+                    from ...models.trend import TrendQuery
+                    TrendQuery.objects.filter(pk=extra_meta["trend_id"]).update(generated=True)
+
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"  Created: {page.title_en} (status={page.status})"
@@ -132,6 +158,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"\nDone. Generated {generated}/{len(unmet)} pages as {status}."
+                f"\nDone. Generated {generated}/{len(queue)} pages as {status}."
             )
         )

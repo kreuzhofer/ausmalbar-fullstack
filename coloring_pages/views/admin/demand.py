@@ -19,16 +19,31 @@ from ...demand import get_unmet_queries
 from ...models.coloring_page import ColoringPage
 from ...models.schedule import GenerationSchedule
 from ...models.system_prompt import SystemPrompt
+from ...models.trend import TrendQuery
+from ...trends import get_ungenerated_trends, refresh_trends
 from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
 
 logger = logging.getLogger(__name__)
 
 
 def demand_dashboard(request):
-    """Show unmet demand analysis and schedule configuration."""
+    """Show unmet demand analysis, trends, and schedule configuration."""
     unmet = get_unmet_queries(limit=20)
     schedule = GenerationSchedule.get_schedule()
     system_prompts = SystemPrompt.objects.all()
+
+    # Trends grouped by source
+    trends_de = list(
+        TrendQuery.objects.filter(source=TrendQuery.SOURCE_RELATED_DE)
+        .order_by("-score")[:15]
+    )
+    trends_en = list(
+        TrendQuery.objects.filter(source=TrendQuery.SOURCE_RELATED_EN)
+        .order_by("-score")[:15]
+    )
+    trends_last_fetched = (
+        TrendQuery.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
+    )
 
     context = {
         **admin.site.each_context(request),
@@ -36,6 +51,9 @@ def demand_dashboard(request):
         "unmet_queries": unmet,
         "schedule": schedule,
         "system_prompts": system_prompts,
+        "trends_de": trends_de,
+        "trends_en": trends_en,
+        "trends_last_fetched": trends_last_fetched,
     }
     return TemplateResponse(
         request,
@@ -85,6 +103,11 @@ def demand_generate(request):
             page.thumbnail.save(thumb_name, ContentFile(result["thumbnail_bytes"]), save=False)
         page.save()
 
+        # Mark trend as generated if it came from trends
+        trend_id = data.get("trend_id")
+        if trend_id:
+            TrendQuery.objects.filter(pk=trend_id).update(generated=True)
+
         logger.info("Generated draft page: %s (id=%d)", page.title_en, page.pk)
         return JsonResponse({
             "success": True,
@@ -94,6 +117,17 @@ def demand_generate(request):
 
     except Exception as e:
         logger.exception("Failed to generate page for query: %s", query)
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+def demand_refresh_trends(request):
+    """Manually trigger a trends refresh."""
+    try:
+        count = refresh_trends(force=True)
+        return JsonResponse({"success": True, "new_trends": count})
+    except Exception as e:
+        logger.exception("Failed to refresh trends")
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -168,5 +202,10 @@ def get_demand_urls():
             "demand/schedule/",
             admin.site.admin_view(demand_schedule_save),
             name="demand_schedule_save",
+        ),
+        path(
+            "demand/refresh-trends/",
+            admin.site.admin_view(demand_refresh_trends),
+            name="demand_refresh_trends",
         ),
     ]

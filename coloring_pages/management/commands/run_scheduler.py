@@ -38,6 +38,13 @@ class Command(BaseCommand):
     def _check_and_run(self):
         # Import here to avoid issues with app registry at startup
         from coloring_pages.models.schedule import GenerationSchedule
+        from coloring_pages.trends import refresh_trends
+
+        # Refresh trends data (respects its own cache window)
+        try:
+            refresh_trends()
+        except Exception:
+            logger.exception("Failed to refresh trends")
 
         schedule = GenerationSchedule.get_schedule()
         if not schedule.enabled:
