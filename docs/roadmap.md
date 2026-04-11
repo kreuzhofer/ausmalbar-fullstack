@@ -92,21 +92,24 @@ Full backup and restore functionality accessible from the admin interface.
 
 Automatically generate new coloring pages based on user demand signals.
 
-- [ ] Analyse SearchQuery entries that returned few or no results
-- [ ] Cluster and rank unmet search terms by frequency
-- [ ] Daily scheduled task to pick top unmet query and generate a coloring page
-- [ ] Admin dashboard showing unmet demand queue and generation history
-- [ ] Option to approve/reject AI-suggested images before publishing
+- [x] Analyse SearchQuery entries that returned few or no results
+- [x] Cluster and rank unmet search terms by frequency
+- [x] Daily scheduled task to pick top unmet query and generate a coloring page
+- [x] Admin dashboard showing unmet demand queue and generation history
+- [x] Option to approve/reject AI-suggested images before publishing (draft/published status)
+- [x] Configurable auto-generation schedule from admin (interval, max pages, enable/disable)
+- [x] Background scheduler runs alongside gunicorn in prod
 
 ### Google Trends Integration
 
 Leverage trending search data to proactively create popular coloring pages.
 
-- [ ] Integrate Google Trends API (pytrends) for Germany-specific trends
-- [ ] Integrate worldwide trending searches related to coloring pages
-- [ ] Filter and rank trends relevant to children's coloring content
-- [ ] Admin dashboard showing current trends and suggested topics
-- [ ] Semi-automated generation pipeline: trend detected, prompt suggested, admin approves
+- [x] Integrate Google Trends API (pytrends) for Germany-specific trends
+- [x] Integrate worldwide trending searches related to coloring pages
+- [x] Filter and rank trends relevant to children's coloring content
+- [x] Admin dashboard showing current trends and suggested topics
+- [x] Semi-automated generation pipeline: trend detected, prompt suggested, admin approves
+- [x] Trends feed into auto-generation scheduler alongside unmet queries
 
 ### Content & Discovery Improvements
 
