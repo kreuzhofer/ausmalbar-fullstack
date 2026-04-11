@@ -20,8 +20,8 @@ class Command(BaseCommand):
         
         # Add static URLs
         static_urls = [
-            reverse('home'),
-            reverse('search'),
+            reverse('coloring_pages:home'),
+            reverse('coloring_pages:search'),
         ]
         
         # Add static pages
