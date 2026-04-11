@@ -26,11 +26,14 @@ class ColoringPageAddForm(forms.ModelForm):
         })
 
 class ColoringPageAdmin(admin.ModelAdmin):
-    list_display = ('title_en', 'title_de', 'seo_url_en_column', 'seo_url_de_column', 'created_at', 'updated_at')
-    list_filter = ('created_at', 'updated_at')
+    list_display = ('title_en', 'title_de', 'status_badge', 'seo_url_en_column', 'seo_url_de_column', 'created_at', 'updated_at')
+    list_filter = ('status', 'created_at', 'updated_at')
     search_fields = ('title_en', 'title_de', 'description_en', 'description_de', 'prompt')
     readonly_fields = ('created_at', 'updated_at', 'thumbnail_preview', 'seo_url_en', 'seo_url_de')
     fieldsets = (
+        ('Status', {
+            'fields': ('status',)
+        }),
         ('English Content', {
             'fields': ('title_en', 'description_en')
         }),
@@ -43,7 +46,28 @@ class ColoringPageAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    actions = ['delete_selected_with_confirmation']
+    actions = ['delete_selected_with_confirmation', 'publish_selected', 'unpublish_selected']
+
+    def status_badge(self, obj):
+        if obj.status == ColoringPage.STATUS_PUBLISHED:
+            return format_html(
+                '<span style="background:#dfd;color:#270;padding:2px 8px;border-radius:3px;font-size:11px;">Published</span>'
+            )
+        return format_html(
+            '<span style="background:#ffd;color:#960;padding:2px 8px;border-radius:3px;font-size:11px;">Draft</span>'
+        )
+    status_badge.short_description = 'Status'
+    status_badge.admin_order_field = 'status'
+
+    @admin.action(description="Publish selected coloring pages")
+    def publish_selected(self, request, queryset):
+        count = queryset.update(status=ColoringPage.STATUS_PUBLISHED)
+        self.message_user(request, _("%d page(s) published.") % count)
+
+    @admin.action(description="Unpublish selected (set to draft)")
+    def unpublish_selected(self, request, queryset):
+        count = queryset.update(status=ColoringPage.STATUS_DRAFT)
+        self.message_user(request, _("%d page(s) set to draft.") % count)
     
     # Add methods to display clickable SEO URLs in the admin list
     def seo_url_en_column(self, obj):

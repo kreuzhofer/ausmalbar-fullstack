@@ -107,7 +107,9 @@ class ColoringPageSitemap(Sitemap):
 
     def items(self):
         # Get all coloring pages that have at least one SEO URL
-        return ColoringPage.objects.exclude(seo_url_en__isnull=True, seo_url_de__isnull=True)
+        return ColoringPage.objects.filter(
+            status=ColoringPage.STATUS_PUBLISHED,
+        ).exclude(seo_url_en__isnull=True, seo_url_de__isnull=True)
 
     def lastmod(self, obj):
         return obj.updated_at

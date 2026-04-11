@@ -8,5 +8,5 @@ def home(request):
     """
     Render the home page with the latest coloring pages.
     """
-    latest_pages = ColoringPage.objects.all()[:3]
+    latest_pages = ColoringPage.objects.filter(status=ColoringPage.STATUS_PUBLISHED)[:3]
     return render(request, 'coloring_pages/home.html', {'latest_pages': latest_pages})

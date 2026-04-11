@@ -18,6 +18,21 @@ class ColoringPage(TimeStampedModel):
     """
     Represents a coloring page with multilingual content.
     """
+    STATUS_DRAFT = 'draft'
+    STATUS_PUBLISHED = 'published'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, _('Draft')),
+        (STATUS_PUBLISHED, _('Published')),
+    ]
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PUBLISHED,
+        db_index=True,
+        verbose_name=_('Status'),
+    )
+
     # English fields
     title_en = models.CharField(max_length=200, verbose_name=_('Title (English)'))
     description_en = models.TextField(verbose_name=_('Description (English)'))

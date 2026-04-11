@@ -21,14 +21,15 @@ def search(request):
             Q(description_en__icontains=query) |
             Q(title_de__icontains=query) |
             Q(description_de__icontains=query) |
-            Q(prompt__icontains=query)
+            Q(prompt__icontains=query),
+            status=ColoringPage.STATUS_PUBLISHED,
         ).distinct()
         
         # Track search query if not a duplicate
         if not SearchQuery.is_duplicate_search(request, query):
             SearchQuery.create_from_request(request, query, pages.count())
     else:
-        pages = ColoringPage.objects.all()
+        pages = ColoringPage.objects.filter(status=ColoringPage.STATUS_PUBLISHED)
     
     # Order by most recent first
     pages = pages.order_by('-created_at')

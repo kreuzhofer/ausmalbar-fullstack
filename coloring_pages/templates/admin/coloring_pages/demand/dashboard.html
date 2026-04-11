@@ -1,0 +1,228 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .demand-container { max-width: 900px; margin: 20px 0; }
+    .section { margin-bottom: 30px; }
+    .section h3 { border-bottom: 2px solid #417690; padding-bottom: 8px; margin-bottom: 15px; }
+
+    /* Schedule */
+    .schedule-form { background: #f8f8f8; padding: 15px 20px; border: 1px solid #eee; border-radius: 4px; }
+    .schedule-form label { font-weight: bold; margin-right: 10px; }
+    .schedule-form input[type="number"] { width: 80px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 3px; }
+    .schedule-form select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 3px; }
+    .schedule-status { margin-top: 10px; font-size: 13px; color: #666; }
+    .schedule-status .last-run { margin-top: 5px; }
+
+    /* Table */
+    .demand-table { width: 100%; border-collapse: collapse; }
+    .demand-table th, .demand-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+    .demand-table th { background: #f0f0f0; font-weight: bold; font-size: 13px; }
+    .demand-table tr:hover { background: #f9f9f9; }
+    .query-text { font-weight: bold; }
+    .count-badge { background: #417690; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+
+    /* Buttons */
+    .btn { padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-block; }
+    .btn-primary { background: #417690; color: white; }
+    .btn-primary:hover { background: #205067; }
+    .btn-success { background: #4a9c5d; color: white; }
+    .btn-success:hover { background: #3a7c4d; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* Status messages */
+    .gen-status { font-size: 12px; color: #666; }
+    .gen-status.success { color: #270; }
+    .gen-status.error { color: #900; }
+
+    /* Batch actions bar */
+    .batch-bar { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+
+    /* Empty state */
+    .empty-state { padding: 30px; text-align: center; color: #999; background: #f8f8f8; border-radius: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="demand-container">
+    <h2>{% trans "Demand Analysis & Auto-Generation" %}</h2>
+
+    <!-- Schedule Configuration -->
+    <div class="section">
+        <h3>{% trans "Auto-Generation Schedule" %}</h3>
+        <div class="schedule-form">
+            <div style="margin-bottom: 10px;">
+                <label>
+                    <input type="checkbox" id="scheduleEnabled" {% if schedule.enabled %}checked{% endif %}>
+                    {% trans "Enable automatic generation" %}
+                </label>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="scheduleInterval">{% trans "Run every" %}</label>
+                <input type="number" id="scheduleInterval" value="{{ schedule.interval_hours }}" min="1" max="168">
+                {% trans "hours" %}
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="scheduleMaxPages">{% trans "Max pages per run:" %}</label>
+                <input type="number" id="scheduleMaxPages" value="{{ schedule.max_pages }}" min="1" max="10">
+            </div>
+            <button type="button" class="btn btn-primary" id="saveScheduleBtn">{% trans "Save Schedule" %}</button>
+            <span id="scheduleSaveStatus" class="gen-status" style="margin-left: 10px;"></span>
+
+            <div class="schedule-status">
+                {% if schedule.last_run %}
+                    <div class="last-run">{% trans "Last run:" %} {{ schedule.last_run|date:"Y-m-d H:i" }}</div>
+                {% else %}
+                    <div class="last-run">{% trans "Never run yet." %}</div>
+                {% endif %}
+                {% if schedule.last_result %}
+                    <details style="margin-top: 5px;">
+                        <summary>{% trans "Last result" %}</summary>
+                        <pre style="font-size: 12px; max-height: 150px; overflow-y: auto; background: #fff; padding: 8px; border: 1px solid #ddd; border-radius: 3px;">{{ schedule.last_result }}</pre>
+                    </details>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Unmet Queries -->
+    <div class="section">
+        <h3>{% trans "Unmet Search Queries" %}</h3>
+
+        {% if unmet_queries %}
+        <div class="batch-bar">
+            <button type="button" class="btn btn-success" id="generateTop5Btn">
+                {% trans "Generate Top 5" %}
+            </button>
+            <span id="batchStatus" class="gen-status"></span>
+        </div>
+
+        <table class="demand-table">
+            <thead>
+                <tr>
+                    <th>{% trans "Query" %}</th>
+                    <th>{% trans "Searches" %}</th>
+                    <th>{% trans "Last Searched" %}</th>
+                    <th>{% trans "Action" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in unmet_queries %}
+                <tr data-query="{{ entry.query }}">
+                    <td class="query-text">{{ entry.query }}</td>
+                    <td><span class="count-badge">{{ entry.count }}</span></td>
+                    <td>{{ entry.last_searched|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <button type="button" class="btn btn-primary btn-sm generate-btn">{% trans "Generate" %}</button>
+                        <span class="gen-status"></span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            {% trans "No unmet search queries found. All popular searches already have matching coloring pages." %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+(function() {
+    const csrfToken = '{{ csrf_token }}';
+    const headers = {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'};
+
+    // Save schedule
+    document.getElementById('saveScheduleBtn').addEventListener('click', async function() {
+        const status = document.getElementById('scheduleSaveStatus');
+        status.textContent = '{% trans "Saving..." %}';
+        status.className = 'gen-status';
+        try {
+            const resp = await fetch('{% url "admin:demand_schedule_save" %}', {
+                method: 'POST', headers,
+                body: JSON.stringify({
+                    enabled: document.getElementById('scheduleEnabled').checked,
+                    interval_hours: parseInt(document.getElementById('scheduleInterval').value),
+                    max_pages: parseInt(document.getElementById('scheduleMaxPages').value),
+                }),
+            });
+            if (resp.ok) {
+                status.textContent = '{% trans "Saved!" %}';
+                status.className = 'gen-status success';
+            } else {
+                status.textContent = '{% trans "Failed to save" %}';
+                status.className = 'gen-status error';
+            }
+        } catch(e) {
+            status.textContent = e.message;
+            status.className = 'gen-status error';
+        }
+    });
+
+    // Single generate
+    document.querySelectorAll('.generate-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const row = this.closest('tr');
+            const query = row.dataset.query;
+            const statusEl = row.querySelector('.gen-status');
+            this.disabled = true;
+            statusEl.textContent = '{% trans "Generating..." %}';
+            statusEl.className = 'gen-status';
+            try {
+                const resp = await fetch('{% url "admin:demand_generate" %}', {
+                    method: 'POST', headers,
+                    body: JSON.stringify({query}),
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    statusEl.textContent = '{% trans "Draft created:" %} ' + data.title;
+                    statusEl.className = 'gen-status success';
+                } else {
+                    statusEl.textContent = data.error || '{% trans "Failed" %}';
+                    statusEl.className = 'gen-status error';
+                    this.disabled = false;
+                }
+            } catch(e) {
+                statusEl.textContent = e.message;
+                statusEl.className = 'gen-status error';
+                this.disabled = false;
+            }
+        });
+    });
+
+    // Batch generate
+    const batchBtn = document.getElementById('generateTop5Btn');
+    if (batchBtn) {
+        batchBtn.addEventListener('click', async function() {
+            const statusEl = document.getElementById('batchStatus');
+            this.disabled = true;
+            statusEl.textContent = '{% trans "Starting batch generation..." %}';
+            statusEl.className = 'gen-status';
+            try {
+                const resp = await fetch('{% url "admin:demand_generate_batch" %}', {
+                    method: 'POST', headers,
+                    body: JSON.stringify({count: 5}),
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    statusEl.textContent = data.message + ' {% trans "Check back shortly." %}';
+                    statusEl.className = 'gen-status success';
+                } else {
+                    statusEl.textContent = data.error || '{% trans "Failed" %}';
+                    statusEl.className = 'gen-status error';
+                    this.disabled = false;
+                }
+            } catch(e) {
+                statusEl.textContent = e.message;
+                statusEl.className = 'gen-status error';
+                this.disabled = false;
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

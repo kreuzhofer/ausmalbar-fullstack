@@ -5,6 +5,21 @@
 {{ block.super }}
 
 {% if user.is_superuser %}
+<div id="demand-module" class="module">
+    <table>
+        <caption>
+            <a href="{% url 'admin:demand_dashboard' %}" class="section" title="{% trans 'AI Content' %}">{% trans "AI Content" %}</a>
+        </caption>
+        <tr>
+            <th scope="row">
+                <a href="{% url 'admin:demand_dashboard' %}">{% trans "Demand Analysis & Auto-Generation" %}</a>
+            </th>
+            <td>
+                <a href="{% url 'admin:demand_dashboard' %}" class="addlink">{% trans "Open" %}</a>
+            </td>
+        </tr>
+    </table>
+</div>
 <div id="backup-module" class="module">
     <table>
         <caption>

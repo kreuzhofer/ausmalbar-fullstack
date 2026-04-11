@@ -7,6 +7,7 @@ services:
         python manage.py migrate &&
         python manage.py collectstatic --noinput &&
         PYTHONPATH=/app python /app/scripts/create_admin.py &&
+        python manage.py run_scheduler &
         gunicorn --bind 0.0.0.0:8000 --workers 4 --threads 2 --timeout 120 ausmalbar.wsgi:application
       "
     volumes:

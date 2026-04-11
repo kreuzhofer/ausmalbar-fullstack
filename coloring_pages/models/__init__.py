@@ -8,10 +8,12 @@ To import models, use: `from coloring_pages.models import ModelName`
 from .coloring_page import ColoringPage
 from .system_prompt import SystemPrompt
 from .search import SearchQuery
+from .schedule import GenerationSchedule
 
 # This makes the models available when importing from coloring_pages.models
 __all__ = [
     'ColoringPage',
     'SystemPrompt',
     'SearchQuery',
+    'GenerationSchedule',
 ]
