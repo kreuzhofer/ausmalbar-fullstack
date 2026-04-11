@@ -10,6 +10,7 @@ from .system_prompt import SystemPrompt
 from .search import SearchQuery
 from .schedule import GenerationSchedule
 from .trend import TrendQuery
+from .suggestion import Suggestion
 
 # This makes the models available when importing from coloring_pages.models
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     'SearchQuery',
     'GenerationSchedule',
     'TrendQuery',
+    'Suggestion',
 ]

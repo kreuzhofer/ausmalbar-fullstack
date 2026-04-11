@@ -143,6 +143,31 @@ Please suggest exactly {count} new coloring page ideas. Return a JSON object: {{
         return []
 
 
+def create_suggestions(count=5):
+    """
+    Generate AI suggestions and persist them to the database.
+    Returns the list of created Suggestion objects.
+    """
+    from .models.suggestion import Suggestion
+
+    raw = generate_suggestions(count=count)
+    created = []
+    for s in raw:
+        obj = Suggestion.objects.create(
+            image_prompt=s.get("image_prompt", ""),
+            title_en=s.get("title_en", "")[:200],
+            title_de=s.get("title_de", "")[:200],
+            description_en=s.get("description_en", ""),
+            description_de=s.get("description_de", ""),
+            reasoning=s.get("reasoning", ""),
+        )
+        created.append(obj)
+        logger.info("Saved suggestion %d: %s", obj.pk, obj.title_en)
+
+    logger.info("Persisted %d suggestions", len(created))
+    return created
+
+
 def _get_existing_pages_context():
     """Build a compact summary of existing coloring pages for the GPT context."""
     from .models.coloring_page import ColoringPage

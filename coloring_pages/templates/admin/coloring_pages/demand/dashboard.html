@@ -122,10 +122,59 @@
             {% trans "GPT analyses your search queries, Google Trends, seasonality, and existing content to suggest new coloring pages." %}
         </p>
         <div style="margin-bottom:15px;">
-            <button type="button" class="btn btn-success" id="generateSuggestionsBtn">{% trans "Generate Suggestions" %}</button>
+            <button type="button" class="btn btn-success" id="generateSuggestionsBtn">{% trans "Generate New Suggestions" %}</button>
             <span id="suggestionsStatus" class="gen-status"></span>
         </div>
-        <div id="suggestionsContainer"></div>
+
+        {% if pending_suggestions %}
+        <h4>{% trans "Pending Review" %} ({{ pending_suggestions|length }})</h4>
+        {% for s in pending_suggestions %}
+        <div class="suggestion-card" data-suggestion-id="{{ s.pk }}">
+            <div class="reasoning">{{ s.reasoning }}</div>
+            <div class="titles"><strong>EN:</strong> {{ s.title_en }} | <strong>DE:</strong> {{ s.title_de }}</div>
+            <div class="prompt-text">{{ s.image_prompt }}</div>
+            <div class="suggestion-actions">
+                <button type="button" class="btn btn-approve btn-sm approve-btn">{% trans "Approve & Generate" %}</button>
+                <button type="button" class="btn btn-dismiss btn-sm dismiss-btn">{% trans "Dismiss" %}</button>
+                <span class="gen-status"></span>
+            </div>
+            <div class="suggestion-preview">
+                <img class="preview-thumb" src="" alt="Preview">
+                <div>
+                    <button type="button" class="btn btn-publish btn-sm publish-btn" style="display:none;">{% trans "Publish" %}</button>
+                    <span class="publish-status gen-status"></span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if recent_approved %}
+        <h4 style="margin-top:20px;">{% trans "Recently Approved" %}</h4>
+        {% for s in recent_approved %}
+        <div class="suggestion-card" style="opacity:0.7;">
+            <div class="titles"><strong>EN:</strong> {{ s.title_en }} | <strong>DE:</strong> {{ s.title_de }}</div>
+            <div class="prompt-text">{{ s.image_prompt }}</div>
+            {% if s.coloring_page and s.coloring_page.thumbnail %}
+            <div class="suggestion-preview visible">
+                <img class="preview-thumb" src="{{ s.coloring_page.thumbnail.url }}" alt="Preview"
+                     onclick="openLightbox('{{ s.coloring_page.image.url }}')" style="cursor:pointer;">
+                <div>
+                    <span class="gen-status success">
+                        {% if s.coloring_page.status == 'published' %}{% trans "Published" %}{% else %}{% trans "Draft" %}{% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if not pending_suggestions and not recent_approved %}
+        <div class="empty-state">
+            {% trans "No suggestions yet. Click 'Generate New Suggestions' to get AI-powered ideas." %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Schedule Configuration -->
@@ -445,128 +494,112 @@
         } catch(e) { statusEl.textContent = e.message; statusEl.className = 'gen-status error'; this.disabled = false; }
     });
 
-    // AI Suggestions
+    // Generate new suggestions (persisted to DB, then reload)
     document.getElementById('generateSuggestionsBtn').addEventListener('click', async function() {
         const statusEl = document.getElementById('suggestionsStatus');
-        const container = document.getElementById('suggestionsContainer');
         this.disabled = true;
         statusEl.textContent = '{% trans "Asking GPT for suggestions (this may take a moment)..." %}';
         statusEl.className = 'gen-status';
-        container.innerHTML = '';
-
         try {
             const resp = await fetch('{% url "admin:demand_ai_suggestions" %}', {
                 method: 'POST', headers, body: JSON.stringify({count: 5}),
             });
             const data = await resp.json();
-            this.disabled = false;
-
-            if (!resp.ok) {
+            if (resp.ok) {
+                statusEl.textContent = data.count + ' {% trans "suggestions created. Reloading..." %}';
+                statusEl.className = 'gen-status success';
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
                 statusEl.textContent = data.error || '{% trans "Failed" %}';
                 statusEl.className = 'gen-status error';
-                return;
+                this.disabled = false;
             }
-
-            statusEl.textContent = data.suggestions.length + ' {% trans "suggestions generated" %}';
-            statusEl.className = 'gen-status success';
-
-            data.suggestions.forEach((s, i) => {
-                const card = document.createElement('div');
-                card.className = 'suggestion-card';
-                card.innerHTML = `
-                    <div class="reasoning">${s.reasoning || ''}</div>
-                    <div class="titles"><strong>EN:</strong> ${s.title_en} | <strong>DE:</strong> ${s.title_de}</div>
-                    <div class="prompt-text">${s.image_prompt}</div>
-                    <div class="suggestion-actions">
-                        <button type="button" class="btn btn-approve btn-sm approve-btn">{% trans "Approve & Generate" %}</button>
-                        <button type="button" class="btn btn-dismiss btn-sm dismiss-btn">{% trans "Dismiss" %}</button>
-                        <span class="gen-status"></span>
-                    </div>
-                    <div class="suggestion-preview">
-                        <img class="preview-thumb" src="" alt="Preview">
-                        <div>
-                            <button type="button" class="btn btn-publish btn-sm publish-btn" style="display:none;">{% trans "Publish" %}</button>
-                            <span class="publish-status gen-status"></span>
-                        </div>
-                    </div>
-                `;
-                // Store data on the card
-                card.dataset.suggestion = JSON.stringify(s);
-                container.appendChild(card);
-            });
-
-            // Bind approve buttons
-            container.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const card = this.closest('.suggestion-card');
-                    const s = JSON.parse(card.dataset.suggestion);
-                    const st = card.querySelector('.gen-status');
-                    this.disabled = true;
-                    st.textContent = '{% trans "Generating image..." %}';
-                    st.className = 'gen-status';
-                    try {
-                        const r = await fetch('{% url "admin:demand_approve_suggestion" %}', {
-                            method: 'POST', headers, body: JSON.stringify(s),
-                        });
-                        const d = await r.json();
-                        if (r.ok) {
-                            st.textContent = '{% trans "Draft created:" %} ' + d.title;
-                            st.className = 'gen-status success';
-                            // Show preview
-                            const preview = card.querySelector('.suggestion-preview');
-                            const thumb = card.querySelector('.preview-thumb');
-                            const publishBtn = card.querySelector('.publish-btn');
-                            if (d.thumbnail_url) {
-                                thumb.src = d.thumbnail_url;
-                                thumb.addEventListener('click', () => openLightbox(d.image_url));
-                            }
-                            publishBtn.style.display = 'inline-block';
-                            publishBtn.dataset.pageId = d.page_id;
-                            preview.classList.add('visible');
-                        } else {
-                            st.textContent = d.error || '{% trans "Failed" %}';
-                            st.className = 'gen-status error';
-                            this.disabled = false;
-                        }
-                    } catch(e) { st.textContent = e.message; st.className = 'gen-status error'; this.disabled = false; }
-                });
-            });
-
-            // Bind publish buttons
-            container.querySelectorAll('.publish-btn').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const pageId = this.dataset.pageId;
-                    const st = this.closest('.suggestion-preview').querySelector('.publish-status');
-                    this.disabled = true;
-                    try {
-                        const r = await fetch('{% url "admin:demand_publish_page" %}', {
-                            method: 'POST', headers, body: JSON.stringify({page_id: pageId}),
-                        });
-                        if (r.ok) {
-                            st.textContent = '{% trans "Published!" %}';
-                            st.className = 'gen-status success';
-                        } else {
-                            const d = await r.json();
-                            st.textContent = d.error || '{% trans "Failed" %}';
-                            st.className = 'gen-status error';
-                            this.disabled = false;
-                        }
-                    } catch(e) { st.textContent = e.message; st.className = 'gen-status error'; this.disabled = false; }
-                });
-            });
-
-            // Bind dismiss buttons
-            container.querySelectorAll('.dismiss-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.closest('.suggestion-card').remove();
-                });
-            });
-
         } catch(e) {
             statusEl.textContent = e.message;
             statusEl.className = 'gen-status error';
             this.disabled = false;
         }
+    });
+
+    // Approve buttons (on server-rendered pending suggestion cards)
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const card = this.closest('.suggestion-card');
+            const suggestionId = card.dataset.suggestionId;
+            const st = card.querySelector('.suggestion-actions .gen-status');
+            this.disabled = true;
+            card.querySelector('.dismiss-btn').disabled = true;
+            st.textContent = '{% trans "Generating image..." %}';
+            st.className = 'gen-status';
+            try {
+                const r = await fetch('{% url "admin:demand_approve_suggestion" %}', {
+                    method: 'POST', headers, body: JSON.stringify({suggestion_id: suggestionId}),
+                });
+                const d = await r.json();
+                if (r.ok) {
+                    st.textContent = '{% trans "Draft created:" %} ' + d.title;
+                    st.className = 'gen-status success';
+                    const preview = card.querySelector('.suggestion-preview');
+                    const thumb = card.querySelector('.preview-thumb');
+                    const publishBtn = card.querySelector('.publish-btn');
+                    if (d.thumbnail_url) {
+                        thumb.src = d.thumbnail_url;
+                        thumb.addEventListener('click', () => openLightbox(d.image_url));
+                    }
+                    publishBtn.style.display = 'inline-block';
+                    publishBtn.dataset.pageId = d.page_id;
+                    preview.classList.add('visible');
+                } else {
+                    st.textContent = d.error || '{% trans "Failed" %}';
+                    st.className = 'gen-status error';
+                    this.disabled = false;
+                    card.querySelector('.dismiss-btn').disabled = false;
+                }
+            } catch(e) {
+                st.textContent = e.message; st.className = 'gen-status error';
+                this.disabled = false;
+                card.querySelector('.dismiss-btn').disabled = false;
+            }
+        });
+    });
+
+    // Publish buttons
+    document.querySelectorAll('.publish-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const pageId = this.dataset.pageId;
+            const st = this.closest('.suggestion-preview').querySelector('.publish-status');
+            this.disabled = true;
+            try {
+                const r = await fetch('{% url "admin:demand_publish_page" %}', {
+                    method: 'POST', headers, body: JSON.stringify({page_id: pageId}),
+                });
+                if (r.ok) {
+                    st.textContent = '{% trans "Published!" %}';
+                    st.className = 'gen-status success';
+                } else {
+                    const d = await r.json();
+                    st.textContent = d.error || '{% trans "Failed" %}';
+                    st.className = 'gen-status error';
+                    this.disabled = false;
+                }
+            } catch(e) { st.textContent = e.message; st.className = 'gen-status error'; this.disabled = false; }
+        });
+    });
+
+    // Dismiss buttons
+    document.querySelectorAll('.dismiss-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const card = this.closest('.suggestion-card');
+            const suggestionId = card.dataset.suggestionId;
+            this.disabled = true;
+            try {
+                const r = await fetch('{% url "admin:demand_dismiss_suggestion" %}', {
+                    method: 'POST', headers, body: JSON.stringify({suggestion_id: suggestionId}),
+                });
+                if (r.ok) { card.remove(); }
+                else { this.disabled = false; }
+            } catch(e) { this.disabled = false; }
+        });
     });
 
     // Generate from trend

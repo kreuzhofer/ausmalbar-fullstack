@@ -20,8 +20,9 @@ from ...embeddings import embed_all_pages, embed_coloring_page
 from ...models.coloring_page import ColoringPage
 from ...models.schedule import GenerationSchedule
 from ...models.system_prompt import SystemPrompt
+from ...models.suggestion import Suggestion
 from ...models.trend import TrendQuery
-from ...suggestions import generate_suggestions
+from ...suggestions import create_suggestions
 from ...trends import get_ungenerated_trends, refresh_trends
 from ...utils import generate_coloring_page_image, generate_titles_and_descriptions
 
@@ -47,6 +48,10 @@ def demand_dashboard(request):
         TrendQuery.objects.order_by("-fetched_at").values_list("fetched_at", flat=True).first()
     )
 
+    # Persisted AI suggestions
+    pending_suggestions = Suggestion.objects.filter(status=Suggestion.STATUS_PENDING)
+    recent_approved = Suggestion.objects.filter(status=Suggestion.STATUS_APPROVED).order_by("-updated_at")[:10]
+
     context = {
         **admin.site.each_context(request),
         "title": _("Demand Analysis"),
@@ -56,6 +61,8 @@ def demand_dashboard(request):
         "trends_de": trends_de,
         "trends_en": trends_en,
         "trends_last_fetched": trends_last_fetched,
+        "pending_suggestions": pending_suggestions,
+        "recent_approved": recent_approved,
     }
     return TemplateResponse(
         request,
@@ -189,12 +196,15 @@ def demand_schedule_save(request):
 
 @require_POST
 def demand_ai_suggestions(request):
-    """Generate AI-powered coloring page suggestions."""
+    """Generate AI-powered suggestions and persist them to the database."""
     data = json.loads(request.body)
     count = min(int(data.get("count", 5)), 10)
     try:
-        suggestions = generate_suggestions(count=count)
-        return JsonResponse({"success": True, "suggestions": suggestions})
+        created = create_suggestions(count=count)
+        return JsonResponse({
+            "success": True,
+            "count": len(created),
+        })
     except Exception as e:
         logger.exception("Failed to generate AI suggestions")
         return JsonResponse({"error": str(e)}, status=500)
@@ -202,20 +212,18 @@ def demand_ai_suggestions(request):
 
 @require_POST
 def demand_approve_suggestion(request):
-    """Approve an AI suggestion: generate the image and create a draft page."""
+    """Approve a persisted suggestion: generate the image and create a draft page."""
     data = json.loads(request.body)
-    image_prompt = data.get("image_prompt", "").strip()
-    title_en = data.get("title_en", "").strip()
-    title_de = data.get("title_de", "").strip()
-    description_en = data.get("description_en", "").strip()
-    description_de = data.get("description_de", "").strip()
-
-    if not image_prompt:
-        return JsonResponse({"error": "No image prompt"}, status=400)
+    suggestion_id = data.get("suggestion_id")
 
     try:
-        logger.info("Generating image from AI suggestion: %s", image_prompt[:80])
-        result = generate_coloring_page_image(image_prompt)
+        suggestion = Suggestion.objects.get(pk=suggestion_id, status=Suggestion.STATUS_PENDING)
+    except Suggestion.DoesNotExist:
+        return JsonResponse({"error": "Suggestion not found or already processed"}, status=404)
+
+    try:
+        logger.info("Generating image for suggestion %d: %s", suggestion.pk, suggestion.image_prompt[:80])
+        result = generate_coloring_page_image(suggestion.image_prompt)
 
         img_bytes = result["image_bytes"]
         thumb_bytes = result.get("thumbnail_bytes")
@@ -226,27 +234,30 @@ def demand_approve_suggestion(request):
         )
 
         page = ColoringPage(
-            title_en=title_en[:200] or "Untitled",
-            title_de=title_de[:200] or "Ohne Titel",
-            description_en=description_en or title_en,
-            description_de=description_de or title_de,
-            prompt=image_prompt,
+            title_en=suggestion.title_en or "Untitled",
+            title_de=suggestion.title_de or "Ohne Titel",
+            description_en=suggestion.description_en or suggestion.title_en,
+            description_de=suggestion.description_de or suggestion.title_de,
+            prompt=suggestion.image_prompt,
             status=ColoringPage.STATUS_DRAFT,
-            metadata={"source": "ai_suggestion"},
+            metadata={"source": "ai_suggestion", "suggestion_id": suggestion.pk},
         )
-        img_name = f"coloring_ai_{title_en[:30].replace(' ', '_')}.png"
+        safe_name = suggestion.title_en[:30].replace(" ", "_").replace("/", "_")
+        img_name = f"coloring_ai_{safe_name}.png"
         page.image.save(img_name, ContentFile(img_bytes), save=False)
         if thumb_bytes:
-            thumb_name = f"thumb_ai_{title_en[:30].replace(' ', '_')}.png"
+            thumb_name = f"thumb_ai_{safe_name}.png"
             page.thumbnail.save(thumb_name, ContentFile(thumb_bytes), save=False)
         page.save()
 
-        logger.info(
-            "Draft saved: id=%d, image=%s, thumbnail=%s",
-            page.pk, page.image.name, page.thumbnail.name if page.thumbnail else "none",
-        )
+        logger.info("Draft saved: id=%d, image=%s", page.pk, page.image.name)
 
-        # Generate embedding for the new page
+        # Update suggestion
+        suggestion.status = Suggestion.STATUS_APPROVED
+        suggestion.coloring_page = page
+        suggestion.save()
+
+        # Generate embedding
         try:
             embed_coloring_page(page)
         except Exception:
@@ -260,8 +271,23 @@ def demand_approve_suggestion(request):
             "image_url": page.image.url if page.image else "",
         })
     except Exception as e:
-        logger.exception("Failed to generate image from AI suggestion")
+        logger.exception("Failed to generate image for suggestion %d", suggestion.pk)
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+def demand_dismiss_suggestion(request):
+    """Dismiss a pending suggestion."""
+    data = json.loads(request.body)
+    suggestion_id = data.get("suggestion_id")
+    try:
+        s = Suggestion.objects.get(pk=suggestion_id, status=Suggestion.STATUS_PENDING)
+        s.status = Suggestion.STATUS_DISMISSED
+        s.save()
+        logger.info("Dismissed suggestion %d: %s", s.pk, s.title_en)
+        return JsonResponse({"success": True})
+    except Suggestion.DoesNotExist:
+        return JsonResponse({"error": "Suggestion not found"}, status=404)
 
 
 @require_POST
@@ -348,5 +374,10 @@ def get_demand_urls():
             "demand/publish/",
             admin.site.admin_view(demand_publish_page),
             name="demand_publish_page",
+        ),
+        path(
+            "demand/dismiss-suggestion/",
+            admin.site.admin_view(demand_dismiss_suggestion),
+            name="demand_dismiss_suggestion",
         ),
     ]

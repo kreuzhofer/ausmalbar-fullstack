@@ -10,7 +10,7 @@ from ...demand import get_unmet_queries
 from ...embeddings import embed_coloring_page
 from ...models.coloring_page import ColoringPage
 from ...models.system_prompt import SystemPrompt
-from ...suggestions import generate_suggestions
+from ...suggestions import create_suggestions
 from ...trends import get_ungenerated_trends, refresh_trends
 from ...utils import generate_coloring_page_image
 
@@ -75,79 +75,23 @@ class Command(BaseCommand):
             self._run_legacy_pipeline(source, count, system_prompt, status)
 
     def _run_ai_pipeline(self, count, system_prompt, status):
-        """AI-driven pipeline: GPT suggests, we generate images."""
+        """AI-driven pipeline: GPT creates suggestions for admin review."""
         self.stdout.write("Refreshing trends data...")
         refresh_trends()
 
         self.stdout.write(f"Asking GPT for {count} suggestions...")
-        suggestions = generate_suggestions(count=count)
+        created = create_suggestions(count=count)
 
-        if not suggestions:
+        if not created:
             self.stdout.write(self.style.WARNING("No AI suggestions generated."))
             return
 
-        self.stdout.write(f"Got {len(suggestions)} suggestions:")
-        for s in suggestions:
-            self.stdout.write(f"  - \"{s.get('title_en', '?')}\"")
-
-        generated = 0
-        for s in suggestions:
-            prompt = s.get("image_prompt", "")
-            title_en = s.get("title_en", "Untitled")
-            self.stdout.write(f"\nGenerating: \"{title_en}\"...")
-
-            try:
-                result = generate_coloring_page_image(
-                    prompt, system_prompt=system_prompt
-                )
-
-                page = ColoringPage(
-                    title_en=title_en[:200],
-                    title_de=s.get("title_de", title_en)[:200],
-                    description_en=s.get("description_en", ""),
-                    description_de=s.get("description_de", ""),
-                    prompt=prompt,
-                    status=status,
-                    metadata={
-                        "source": "ai_suggestion",
-                        "reasoning": s.get("reasoning", ""),
-                        "system_prompt_name": (
-                            system_prompt.name if system_prompt else "default"
-                        ),
-                    },
-                )
-
-                img_name = f"coloring_ai_{title_en[:30].replace(' ', '_')}.png"
-                page.image.save(
-                    img_name, ContentFile(result["image_bytes"]), save=False
-                )
-                if result.get("thumbnail_bytes"):
-                    thumb_name = f"thumb_ai_{title_en[:30].replace(' ', '_')}.png"
-                    page.thumbnail.save(
-                        thumb_name,
-                        ContentFile(result["thumbnail_bytes"]),
-                        save=False,
-                    )
-                page.save()
-
-                # Generate embedding
-                try:
-                    embed_coloring_page(page)
-                except Exception:
-                    logger.warning("Failed to embed page %d", page.pk)
-
-                generated += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f"  Created: {page.title_en} (status={page.status})")
-                )
-
-            except Exception as e:
-                logger.exception("Failed to generate: %s", title_en)
-                self.stdout.write(self.style.ERROR(f"  Failed: {e}"))
-
         self.stdout.write(
-            self.style.SUCCESS(f"\nDone. Generated {generated}/{len(suggestions)} pages as {status}.")
+            self.style.SUCCESS(f"\nDone. Created {len(created)} suggestions for review:")
         )
+        for s in created:
+            self.stdout.write(f"  - [{s.pk}] \"{s.title_en}\"")
+        self.stdout.write("Review and approve them in the admin dashboard at /admin/demand/")
 
     def _run_legacy_pipeline(self, source, count, system_prompt, status):
         """Legacy pipeline: direct query/trend to image generation."""
