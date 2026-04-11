@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -14,7 +15,10 @@ from django.http import FileResponse, HttpResponseRedirect, JsonResponse
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+
+logger = logging.getLogger(__name__)
 
 # In-memory store for restore tasks (single-server, single-process is fine here)
 _restore_tasks = {}
@@ -45,6 +49,7 @@ def backup_view(request):
             response["Content-Disposition"] = 'attachment; filename="ausmalbar_backup.zip"'
             return response
     except Exception as e:
+        logger.exception("Backup failed")
         messages.error(request, _("Backup failed: %s") % str(e))
         return HttpResponseRedirect(reverse("admin:backup"))
 
@@ -72,11 +77,16 @@ def restore_upload_chunk(request):
     chunk = request.FILES.get("chunk")
 
     if not chunk:
+        logger.warning("Upload chunk request with no chunk data, upload_id=%s", upload_id)
         return JsonResponse({"error": "No chunk data"}, status=400)
 
     # Create or retrieve upload session
     if upload_id not in _upload_sessions:
         tmpdir = tempfile.mkdtemp()
+        logger.info(
+            "New upload session: upload_id=%s, filename=%s, total_chunks=%d, tmpdir=%s",
+            upload_id, filename, total_chunks, tmpdir,
+        )
         _upload_sessions[upload_id] = {
             "tmpdir": tmpdir,
             "filepath": os.path.join(tmpdir, filename),
@@ -88,7 +98,6 @@ def restore_upload_chunk(request):
 
     # Write chunk at correct offset
     with open(session["filepath"], "ab" if chunk_index > 0 else "wb") as f:
-        # Seek to correct position for out-of-order chunks
         chunk_size = int(request.POST.get("chunk_size", chunk.size))
         f.seek(chunk_index * chunk_size)
         for part in chunk.chunks():
@@ -96,6 +105,18 @@ def restore_upload_chunk(request):
 
     session["received"].add(chunk_index)
     complete = len(session["received"]) >= session["total_chunks"]
+
+    logger.info(
+        "Chunk received: upload_id=%s, chunk=%d/%d, complete=%s",
+        upload_id, chunk_index + 1, session["total_chunks"], complete,
+    )
+
+    if complete:
+        file_size = os.path.getsize(session["filepath"])
+        logger.info(
+            "Upload complete: upload_id=%s, file_size=%.1f MB",
+            upload_id, file_size / (1024 * 1024),
+        )
 
     return JsonResponse({
         "upload_id": upload_id,
@@ -110,12 +131,15 @@ def _run_restore(task_id, archive_path, tmpdir):
     """Run the restore process in a background thread, updating progress."""
     task = _restore_tasks[task_id]
     try:
+        # Validate
         task["status"] = "validating"
         task["message"] = "Validating backup archive..."
+        logger.info("[restore:%s] Validating archive: %s", task_id[:8], archive_path)
 
         if not zipfile.is_zipfile(archive_path):
             task["status"] = "error"
             task["message"] = "Not a valid ZIP file."
+            logger.error("[restore:%s] Not a valid ZIP file", task_id[:8])
             return
 
         with zipfile.ZipFile(archive_path, "r") as zf:
@@ -123,22 +147,31 @@ def _run_restore(task_id, archive_path, tmpdir):
             if "db.sql" not in names:
                 task["status"] = "error"
                 task["message"] = "Invalid backup: missing db.sql in archive."
+                logger.error("[restore:%s] Missing db.sql in archive", task_id[:8])
                 return
             media_count = sum(1 for n in names if n.startswith("media/"))
+
+        logger.info(
+            "[restore:%s] Archive valid: %d files, %d media files",
+            task_id[:8], len(names), media_count,
+        )
 
         db_settings = settings.DATABASES["default"]
         engine = db_settings["ENGINE"]
         if "postgresql" not in engine:
             task["status"] = "error"
             task["message"] = f"Restore only supports PostgreSQL. Current engine: {engine}"
+            logger.error("[restore:%s] Unsupported engine: %s", task_id[:8], engine)
             return
 
-        # Extract archive
+        # Extract
         task["status"] = "extracting"
         task["message"] = "Extracting backup archive..."
+        logger.info("[restore:%s] Extracting archive...", task_id[:8])
         extract_dir = os.path.join(tmpdir, "extracted")
         with zipfile.ZipFile(archive_path, "r") as zf:
             zf.extractall(extract_dir)
+        logger.info("[restore:%s] Extraction complete", task_id[:8])
 
         # Restore database
         task["status"] = "restoring_db"
@@ -155,6 +188,7 @@ def _run_restore(task_id, archive_path, tmpdir):
         psql_base = ["psql", "--host", host, "--port", port, "--username", user]
 
         # Terminate connections
+        logger.info("[restore:%s] Terminating existing DB connections...", task_id[:8])
         subprocess.run(
             psql_base + [
                 "--dbname", "postgres", "-c",
@@ -165,6 +199,7 @@ def _run_restore(task_id, archive_path, tmpdir):
         )
 
         # Drop and recreate
+        logger.info("[restore:%s] Dropping and recreating database '%s'...", task_id[:8], db_name)
         subprocess.run(
             psql_base + ["--dbname", "postgres", "-c", f"DROP DATABASE IF EXISTS {db_name};"],
             env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True,
@@ -175,6 +210,7 @@ def _run_restore(task_id, archive_path, tmpdir):
         )
 
         # pg_restore
+        logger.info("[restore:%s] Running pg_restore...", task_id[:8])
         result = subprocess.run(
             [
                 "pg_restore", "--host", host, "--port", port,
@@ -185,12 +221,16 @@ def _run_restore(task_id, archive_path, tmpdir):
         )
         warnings = ""
         if result.returncode > 1:
+            stderr = result.stderr.decode()
             task["status"] = "error"
-            task["message"] = f"Database restore failed: {result.stderr.decode()}"
+            task["message"] = f"Database restore failed: {stderr}"
+            logger.error("[restore:%s] pg_restore failed (code %d): %s", task_id[:8], result.returncode, stderr)
             return
         if result.returncode == 1:
             warnings = result.stderr.decode()
+            logger.warning("[restore:%s] pg_restore warnings: %s", task_id[:8], warnings)
 
+        logger.info("[restore:%s] Database restored successfully", task_id[:8])
         task["message"] = "Database restored."
 
         # Restore media files
@@ -198,6 +238,7 @@ def _run_restore(task_id, archive_path, tmpdir):
         extracted_media = os.path.join(extract_dir, "media")
         if os.path.isdir(extracted_media):
             task["message"] = f"Restoring {media_count} media files..."
+            logger.info("[restore:%s] Restoring %d media files...", task_id[:8], media_count)
             media_root = settings.MEDIA_ROOT
             # Clear contents (not the dir itself — it may be a Docker volume mount)
             if os.path.isdir(media_root):
@@ -217,8 +258,10 @@ def _run_restore(task_id, archive_path, tmpdir):
                     shutil.copytree(src, dst)
                 else:
                     shutil.copy2(src, dst)
+            logger.info("[restore:%s] Media files restored", task_id[:8])
         else:
             media_count = 0
+            logger.info("[restore:%s] No media files in backup", task_id[:8])
 
         # Done
         task["status"] = "complete"
@@ -227,10 +270,12 @@ def _run_restore(task_id, archive_path, tmpdir):
             "media_files": media_count,
             "warnings": warnings,
         }
+        logger.info("[restore:%s] Restore complete. Media files: %d", task_id[:8], media_count)
 
     except Exception as e:
         task["status"] = "error"
         task["message"] = str(e)
+        logger.exception("[restore:%s] Restore failed with exception", task_id[:8])
     finally:
         # Clean up upload session and temp files
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -243,6 +288,7 @@ def restore_run(request):
     upload_id = data.get("upload_id")
 
     if upload_id not in _upload_sessions:
+        logger.error("Restore run: upload session not found for upload_id=%s", upload_id)
         return JsonResponse({"error": "Upload session not found"}, status=404)
 
     session = _upload_sessions.pop(upload_id)
@@ -250,6 +296,7 @@ def restore_run(request):
     tmpdir = session["tmpdir"]
 
     if not os.path.isfile(archive_path):
+        logger.error("Restore run: uploaded file not found at %s", archive_path)
         return JsonResponse({"error": "Uploaded file not found"}, status=404)
 
     task_id = str(uuid.uuid4())
@@ -259,6 +306,11 @@ def restore_run(request):
         "result": None,
     }
 
+    logger.info(
+        "Starting restore: task_id=%s, upload_id=%s, archive=%s",
+        task_id[:8], upload_id, archive_path,
+    )
+
     thread = threading.Thread(
         target=_run_restore, args=(task_id, archive_path, tmpdir), daemon=True
     )
@@ -267,10 +319,11 @@ def restore_run(request):
     return JsonResponse({"task_id": task_id})
 
 
-def restore_status(request, task_id):
-    """Poll for restore progress."""
+def restore_status_view(request, task_id):
+    """Poll for restore progress. No auth required — task_id acts as a token."""
     task = _restore_tasks.get(task_id)
     if not task:
+        logger.debug("Status poll for unknown task_id=%s", task_id[:8] if task_id else "none")
         return JsonResponse({"error": "Task not found"}, status=404)
 
     response = {
@@ -282,17 +335,13 @@ def restore_status(request, task_id):
 
     # Clean up completed/failed tasks after client reads them
     if task["status"] in ("complete", "error"):
+        logger.info(
+            "Task %s finished with status=%s, cleaning up",
+            task_id[:8], task["status"],
+        )
         _restore_tasks.pop(task_id, None)
 
-    return response
-
-
-def restore_status_view(request, task_id):
-    """Wrap restore_status to return JsonResponse."""
-    result = restore_status(request, task_id)
-    if isinstance(result, JsonResponse):
-        return result
-    return JsonResponse(result)
+    return JsonResponse(response)
 
 
 def get_backup_urls():
@@ -318,9 +367,12 @@ def get_backup_urls():
             admin.site.admin_view(restore_run),
             name="restore_run",
         ),
+        # Status endpoint is NOT wrapped with admin_view — the DB is gone
+        # during restore so session auth would fail. The UUID task_id serves
+        # as an unguessable token.
         path(
             "restore/status/<str:task_id>/",
-            admin.site.admin_view(restore_status_view),
+            csrf_exempt(restore_status_view),
             name="restore_status",
         ),
     ]
