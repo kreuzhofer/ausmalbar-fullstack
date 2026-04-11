@@ -140,18 +140,23 @@ def demand_generate_batch(request):
     count = min(int(data.get("count", 5)), 10)
 
     def _run():
+        logger.info("[batch] Starting batch generation (count=%d)...", count)
         try:
             from io import StringIO
             out = StringIO()
-            call_command("generate_daily", count=count, stdout=out)
+            err = StringIO()
+            call_command("generate_daily", count=count, stdout=out, stderr=err)
             output = out.getvalue()
+            errors = err.getvalue()
+            if errors:
+                logger.warning("[batch] stderr output: %s", errors)
             schedule = GenerationSchedule.get_schedule()
             schedule.last_run = timezone.now()
             schedule.last_result = output
             schedule.save()
-            logger.info("Batch generation complete: %s", output[-200:])
+            logger.info("[batch] Batch generation complete:\n%s", output)
         except Exception:
-            logger.exception("Batch generation failed")
+            logger.exception("[batch] Batch generation failed")
 
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
@@ -247,16 +252,23 @@ def demand_approve_suggestion(request):
 @require_POST
 def demand_embed_all(request):
     """Trigger embedding generation for all pages."""
+    total = ColoringPage.objects.count()
+    pending = ColoringPage.objects.filter(embedding__isnull=True).count()
+
     def _run():
+        logger.info("[embed] Starting embedding generation (%d pending of %d total)...", pending, total)
         try:
             count = embed_all_pages()
-            logger.info("Embed all pages complete: %d pages", count)
+            logger.info("[embed] Embedding complete: %d pages embedded", count)
         except Exception:
-            logger.exception("Embed all pages failed")
+            logger.exception("[embed] Embedding generation failed")
 
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
-    return JsonResponse({"success": True, "message": "Embedding generation started in background..."})
+    return JsonResponse({
+        "success": True,
+        "message": f"Embedding {pending} pages in background (of {total} total)...",
+    })
 
 
 def get_demand_urls():

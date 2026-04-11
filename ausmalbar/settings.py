@@ -233,3 +233,28 @@ DEFAULT_FROM_EMAIL = 'noreply@ausmalbar.com'
 
 # Mixpanel settings
 MIXPANEL_TOKEN = os.getenv('MIXPANEL_TOKEN')
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'coloring_pages': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

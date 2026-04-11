@@ -52,7 +52,7 @@ def embed_coloring_page(page, save=True):
         # Use update to avoid triggering the full save() with thumbnail regeneration
         from .models.coloring_page import ColoringPage
         ColoringPage.objects.filter(pk=page.pk).update(embedding=embedding)
-    logger.debug("Embedded page %d: %s", page.pk, page.title_en[:50])
+    logger.info("[embed] Embedded page %d: %s", page.pk, page.title_en[:50])
 
 
 def embed_all_pages(force=False):
