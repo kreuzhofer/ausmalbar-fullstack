@@ -32,7 +32,7 @@ class ColoringPageAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at', 'thumbnail_preview', 'seo_url_en', 'seo_url_de')
     fieldsets = (
         ('Status', {
-            'fields': ('status',)
+            'fields': ('status', 'thumbnail_preview')
         }),
         ('English Content', {
             'fields': ('title_en', 'description_en')
@@ -176,15 +176,24 @@ class ColoringPageAdmin(admin.ModelAdmin):
     
     def thumbnail_preview(self, obj):
         if obj.thumbnail:
+            image_url = obj.image.url if obj.image else ""
             return format_html(
                 '<div style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; '
-                'background: #f8f8f8; border: 1px solid #eee; border-radius: 4px; overflow: hidden;">'
+                'background: #f8f8f8; border: 1px solid #eee; border-radius: 4px; overflow: hidden; cursor: pointer;" '
+                'onclick="(function(){{ var o=document.getElementById(\'img-lightbox\'); if(!o){{ '
+                'o=document.createElement(\'div\'); o.id=\'img-lightbox\'; '
+                'o.style.cssText=\'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);'
+                'z-index:9999;display:flex;justify-content:center;align-items:center;cursor:pointer;\'; '
+                'o.innerHTML=\'<img style=\\\'max-width:90vw;max-height:90vh;border-radius:6px;\\\' />\'; '
+                'o.addEventListener(\'click\',function(){{ this.style.display=\'none\'; }}); '
+                'document.body.appendChild(o); }} o.querySelector(\'img\').src=\'{}\'; o.style.display=\'flex\'; }})()">'
                 '<img src="{}" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;" />'
                 '</div>',
-                obj.thumbnail.url
+                image_url,
+                obj.thumbnail.url,
             )
         return "No thumbnail available"
-    thumbnail_preview.short_description = 'Thumbnail Preview'
+    thumbnail_preview.short_description = 'Preview'
     
     def get_urls(self):
         urls = super().get_urls()

@@ -122,7 +122,11 @@
         
         <div class="coloring-page-container p-3 mb-4">
             {% if page.image %}
-                <img src="{{ page.image.url }}" alt="{{ page.title }}" class="coloring-page-image">
+                <img src="{{ page.image.url }}" alt="{{ page.title }}" class="coloring-page-image" style="cursor:pointer;" onclick="document.getElementById('detail-lightbox').style.display='flex'">
+                <div id="detail-lightbox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;justify-content:center;align-items:center;cursor:pointer;" onclick="this.style.display='none'">
+                    <span style="position:fixed;top:20px;right:30px;color:white;font-size:36px;cursor:pointer;z-index:10000;">&times;</span>
+                    <img src="{{ page.image.url }}" style="max-width:90vw;max-height:90vh;border-radius:6px;box-shadow:0 4px 30px rgba(0,0,0,0.5);" alt="{{ page.title }}">
+                </div>
             {% else %}
                 <div class="text-center p-5 bg-light">
                     <i class="fas fa-image fa-5x text-muted mb-3"></i>

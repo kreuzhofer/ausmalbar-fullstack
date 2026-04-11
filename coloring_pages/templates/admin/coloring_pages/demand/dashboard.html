@@ -72,6 +72,36 @@
         background: #f0f0f0; padding: 10px 15px; border-radius: 4px;
         margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
+
+    /* Preview thumbnail in suggestion cards */
+    .suggestion-preview {
+        display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
+        align-items: center; gap: 12px;
+    }
+    .suggestion-preview.visible { display: flex; }
+    .suggestion-preview img {
+        width: 100px; height: 100px; object-fit: contain; border: 1px solid #ddd;
+        border-radius: 4px; cursor: pointer; background: #f8f8f8;
+    }
+    .suggestion-preview img:hover { border-color: #417690; }
+    .btn-publish { background: #4a9c5d; color: white; }
+    .btn-publish:hover { background: #3a7c4d; }
+
+    /* Lightbox */
+    .lightbox-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 9999;
+        justify-content: center; align-items: center; cursor: pointer;
+    }
+    .lightbox-overlay.visible { display: flex; }
+    .lightbox-overlay img {
+        max-width: 90vw; max-height: 90vh; border-radius: 6px;
+        box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+    }
+    .lightbox-close {
+        position: fixed; top: 20px; right: 30px; color: white; font-size: 36px;
+        cursor: pointer; z-index: 10000; line-height: 1;
+    }
 </style>
 {% endblock %}
 
@@ -256,9 +286,27 @@
     </div>
 </div>
 
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
 (function() {
     const csrfToken = '{{ csrf_token }}';
+
+    // Lightbox
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    function openLightbox(src) {
+        lightboxImg.src = src;
+        lightbox.classList.add('visible');
+    }
+    lightbox.addEventListener('click', function() {
+        lightbox.classList.remove('visible');
+        lightboxImg.src = '';
+    });
     const headers = {'X-CSRFToken': csrfToken, 'Content-Type': 'application/json'};
 
     // Save schedule
@@ -434,6 +482,13 @@
                         <button type="button" class="btn btn-dismiss btn-sm dismiss-btn">{% trans "Dismiss" %}</button>
                         <span class="gen-status"></span>
                     </div>
+                    <div class="suggestion-preview">
+                        <img class="preview-thumb" src="" alt="Preview">
+                        <div>
+                            <button type="button" class="btn btn-publish btn-sm publish-btn" style="display:none;">{% trans "Publish" %}</button>
+                            <span class="publish-status gen-status"></span>
+                        </div>
+                    </div>
                 `;
                 // Store data on the card
                 card.dataset.suggestion = JSON.stringify(s);
@@ -457,8 +512,41 @@
                         if (r.ok) {
                             st.textContent = '{% trans "Draft created:" %} ' + d.title;
                             st.className = 'gen-status success';
-                            card.style.opacity = '0.5';
+                            // Show preview
+                            const preview = card.querySelector('.suggestion-preview');
+                            const thumb = card.querySelector('.preview-thumb');
+                            const publishBtn = card.querySelector('.publish-btn');
+                            if (d.thumbnail_url) {
+                                thumb.src = d.thumbnail_url;
+                                thumb.addEventListener('click', () => openLightbox(d.image_url));
+                            }
+                            publishBtn.style.display = 'inline-block';
+                            publishBtn.dataset.pageId = d.page_id;
+                            preview.classList.add('visible');
                         } else {
+                            st.textContent = d.error || '{% trans "Failed" %}';
+                            st.className = 'gen-status error';
+                            this.disabled = false;
+                        }
+                    } catch(e) { st.textContent = e.message; st.className = 'gen-status error'; this.disabled = false; }
+                });
+            });
+
+            // Bind publish buttons
+            container.querySelectorAll('.publish-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const pageId = this.dataset.pageId;
+                    const st = this.closest('.suggestion-preview').querySelector('.publish-status');
+                    this.disabled = true;
+                    try {
+                        const r = await fetch('{% url "admin:demand_publish_page" %}', {
+                            method: 'POST', headers, body: JSON.stringify({page_id: pageId}),
+                        });
+                        if (r.ok) {
+                            st.textContent = '{% trans "Published!" %}';
+                            st.className = 'gen-status success';
+                        } else {
+                            const d = await r.json();
                             st.textContent = d.error || '{% trans "Failed" %}';
                             st.className = 'gen-status error';
                             this.disabled = false;

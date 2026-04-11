@@ -256,10 +256,27 @@ def demand_approve_suggestion(request):
             "success": True,
             "page_id": page.pk,
             "title": page.title_en,
+            "thumbnail_url": page.thumbnail.url if page.thumbnail else "",
+            "image_url": page.image.url if page.image else "",
         })
     except Exception as e:
         logger.exception("Failed to generate image from AI suggestion")
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@require_POST
+def demand_publish_page(request):
+    """Publish a draft page."""
+    data = json.loads(request.body)
+    page_id = data.get("page_id")
+    try:
+        page = ColoringPage.objects.get(pk=page_id)
+        page.status = ColoringPage.STATUS_PUBLISHED
+        page.save(update_fields=["status"])
+        logger.info("Published page %d: %s", page.pk, page.title_en)
+        return JsonResponse({"success": True})
+    except ColoringPage.DoesNotExist:
+        return JsonResponse({"error": "Page not found"}, status=404)
 
 
 @require_POST
@@ -326,5 +343,10 @@ def get_demand_urls():
             "demand/embed-all/",
             admin.site.admin_view(demand_embed_all),
             name="demand_embed_all",
+        ),
+        path(
+            "demand/publish/",
+            admin.site.admin_view(demand_publish_page),
+            name="demand_publish_page",
         ),
     ]
