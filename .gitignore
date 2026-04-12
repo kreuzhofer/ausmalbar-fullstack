@@ -75,6 +75,9 @@ debug.log
 # Project specific
 backups/
 mediafiles/
+
+# Claude Code — local per-user settings only
+.claude/settings.local.json
 staticfiles/
 *.sqlite3
 *.sqlite3-journal
