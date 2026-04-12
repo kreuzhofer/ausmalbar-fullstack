@@ -26,6 +26,9 @@ class ColoringPageAddForm(forms.ModelForm):
         })
 
 class ColoringPageAdmin(admin.ModelAdmin):
+    class Media:
+        js = ('coloring_pages/js/admin_approve.js',)
+
     list_display = ('title_en', 'title_de', 'status_badge', 'seo_url_en_column', 'seo_url_de_column', 'created_at', 'updated_at')
     list_filter = ('status', 'created_at', 'updated_at')
     search_fields = ('title_en', 'title_de', 'description_en', 'description_de', 'prompt')
