@@ -22,6 +22,9 @@ docker-compose logs -f web
 
 # Run Django management commands
 docker-compose exec web python manage.py <command>
+
+# Production (separate compose file)
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 After any rebuild/restart, verify both db and web containers are running and check logs for errors.
@@ -36,6 +39,11 @@ docker-compose exec web python -m pytest coloring_pages/tests/
 
 # Run a single test file
 docker-compose exec web python -m pytest coloring_pages/tests/frontend/test_frontend_urls.py
+
+# Frontend URL accessibility tests use a dedicated settings module
+docker-compose exec web python manage.py test \
+  coloring_pages.tests.frontend.test_frontend_urls \
+  --settings=coloring_pages.tests.frontend.test_settings
 
 # Run with coverage
 docker-compose exec web coverage run --source='.' manage.py test
@@ -58,18 +66,34 @@ Pre-commit hooks enforce formatting. Configuration is in `pyproject.toml`:
 - **`ausmalbar/`** — Project settings, WSGI, middleware (MixpanelTracking, DomainLanguageRedirect), context processors
 - **`coloring_pages/`** — Main app: models, views, templates, admin, management commands, tests
 
-### Key Models
+### Key Modules
 
-- **ColoringPage** — Bilingual title/description/SEO-URL fields (`_en`/`_de` suffixes), image + auto-generated WebP thumbnail, prompt, JSON metadata
-- **SystemPrompt** — Stores AI prompt templates with model provider/name and quality settings
-- **SearchQuery** — Tracks user searches with 5-minute deduplication window, captures session/IP/language/referrer
+Top-level helpers inside `coloring_pages/` worth knowing about:
+- `embeddings.py` + `embed_pages` command — vector embeddings for coloring pages (similarity / related-page features)
+- `suggestions.py` — AI-generated suggestion pipeline; suggestions are persisted via the `Suggestion` model for async review (see recent commits around demand/suggestions workflow)
+- `demand.py` — demand-tracking / dashboard support (paired with `views/admin/demand.py`)
+- `trends.py` — trend computation backing the `Trend` model
+- `storage_backends.py` — S3 storage backend, activated when AWS env vars are set
+- `sitemaps.py` + `generate_sitemap` command — sitemap generation
+- `templatetags/` — custom template tags used in templates
+
+### Models (`coloring_pages/models/` is a package)
+
+- **`coloring_page.py` — ColoringPage** — Bilingual title/description/SEO-URL fields (`_en`/`_de` suffixes), image + auto-generated WebP thumbnail, prompt, JSON metadata
+- **`system_prompt.py` — SystemPrompt** — Stores AI prompt templates with model provider/name and quality settings
+- **`search.py` — SearchQuery** — Tracks user searches with 5-minute deduplication window, captures session/IP/language/referrer
+- **`suggestion.py` — Suggestion** — Persisted AI suggestions awaiting review/publication (drives the demand dashboard)
+- **`trend.py` — Trend** — Trend records derived from `trends.py`
+- **`schedule.py` — Schedule** — Definitions consumed by the `run_scheduler` command for periodic jobs (e.g. `generate_daily`)
+- **`base.py`** — Shared mixins / abstract base used by other models
 
 ### Views Organization
 
 Views are split into modules under `coloring_pages/views/`:
 - `home.py`, `search.py`, `detail.py` — Public pages
-- `admin/` — Custom generation UI (generate form → confirmation/preview)
-- `views_legal.py` — Imprint, privacy, ToS (class-based)
+- `errors.py`, `robots.py`, `sitemap.py` — Error handlers, robots.txt, sitemap
+- `views_class_based.py`, `views_legal.py` — Class-based public views including legal pages (imprint, privacy, ToS)
+- `admin/` — Custom admin UI. Not just generation: contains `generate_coloring_page_view.py` + `confirm_coloring_page_view.py` (the generate → confirm/preview flow), plus full management views in `coloring_page.py`, `system_prompt.py`, `search.py`, `demand.py`, and `backup.py`
 
 ### URL Pattern
 
@@ -80,6 +104,10 @@ SEO URLs serve both languages: `/coloring-page/<slug>/` (EN) and `/ausmalbild/<s
 - `wait_for_db` — Blocks until PostgreSQL is ready (used in container startup)
 - `makemessages_all` — Extract translation strings for all languages
 - `generate_sitemap`, `load_sample_data`, `check_health`, `initdb`
+- `embed_pages` — Compute / refresh embeddings for existing coloring pages
+- `generate_daily` — Daily AI generation job (intended to run via the scheduler)
+- `run_scheduler` — Long-running scheduler that dispatches jobs defined by `Schedule` records
+- `backup`, `restore` — Database/media backup and restore helpers
 
 ## Internationalization
 
@@ -95,3 +123,10 @@ SEO URLs serve both languages: `/coloring-page/<slug>/` (EN) and `/ausmalbild/<s
 - Use explicit `on_delete` for ForeignKey fields
 - Add `verbose_name`/`verbose_name_plural` on models
 - Dependencies go in `requirements.txt` (prod) or `requirements-dev.txt` (dev)
+
+## Related Docs
+
+- `CODING_STANDARDS.md` — Python/JS style, pre-commit hooks, git workflow
+- `README_i18n.md` — Detailed translation workflow (`makemessages` / `compilemessages`, locale layout)
+- `.windsurf/rules/project-rules.md` — Source-of-truth project guidelines (the conventions above mirror it)
+- `README.md` — End-user setup, production deployment, backup/restore recipes
