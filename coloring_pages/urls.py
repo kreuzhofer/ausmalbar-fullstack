@@ -1,7 +1,6 @@
 from django.urls import path
 from django.contrib.auth.decorators import login_required
 from django.views.generic import TemplateView
-from django.utils.translation import gettext_lazy as _
 
 # Import views from their respective modules
 from .views.home import home
@@ -16,20 +15,19 @@ app_name = 'coloring_pages'
 urlpatterns = [
     # Home page
     path('', home, name='home'),
-    
+
     # Search URLs
     path('search/', search, name='search'),  # English
     path('suche/', search, name='suche'),    # German
-    
-    # SEO-friendly URLs for coloring pages
-    # English version
-    path(_('coloring-page') + '/<slug:seo_url>/', 
-         ColoringPageDetailView.as_view(), 
+
+    # SEO-friendly URLs for coloring pages.
+    # The locale prefix (/en/ vs /de/) is enforced by StrictLocalePathMiddleware,
+    # which 301s cross-locale combinations to the correct (locale, path) pair.
+    path('coloring-page/<slug:seo_url>/',
+         ColoringPageDetailView.as_view(),
          name='detail_en'),
-    
-    # German version
-    path(_('ausmalbild') + '/<slug:seo_url>/', 
-         ColoringPageDetailView.as_view(), 
+    path('ausmalbild/<slug:seo_url>/',
+         ColoringPageDetailView.as_view(),
          name='detail_de'),
     
     # Keep the old URL pattern for backward compatibility
