@@ -102,119 +102,99 @@ class StaticViewSitemap(Sitemap):
 
 
 class ColoringPageSitemap(Sitemap):
-    changefreq = 'daily'
+    """One entry per (page, language) pair. Each entry's <loc> is the URL in
+    its own language; each carries xhtml:link alternates for the other language(s)
+    plus x-default. Canonical computation is wrapped in translation.override
+    so it never depends on the request's Accept-Language header.
+    """
+    changefreq = 'weekly'
     priority = 0.9
 
     def items(self):
-        # Get all coloring pages that have at least one SEO URL
-        return ColoringPage.objects.filter(
+        pages = ColoringPage.objects.filter(
             status=ColoringPage.STATUS_PUBLISHED,
         ).exclude(seo_url_en__isnull=True, seo_url_de__isnull=True)
+        # Yield (page, lang) tuples for each available language.
+        entries = []
+        for page in pages:
+            if page.seo_url_en:
+                entries.append((page, 'en'))
+            if page.seo_url_de:
+                entries.append((page, 'de'))
+        return entries
 
-    def lastmod(self, obj):
-        return obj.updated_at
+    def lastmod(self, item):
+        page, _lang = item
+        return page.updated_at
 
-    def location(self, obj):
-        # Always use English version as canonical URL
-        if obj.seo_url_en:
-            return reverse('coloring_pages:detail_en', 
-                         kwargs={'seo_url': obj.seo_url_en}, 
-                         current_app='coloring_pages')
-        # Fallback to German if English is not available
-        elif obj.seo_url_de:
-            return reverse('coloring_pages:detail_de', 
-                         kwargs={'seo_url': obj.seo_url_de}, 
-                         current_app='coloring_pages')
-        # Fallback to ID-based URL if no SEO URLs are available
-        return reverse('coloring_pages:page_detail', 
-                     kwargs={'pk': obj.pk}, 
-                     current_app='coloring_pages')
+    def location(self, item):
+        page, lang = item
+        with translation.override(lang):
+            if lang == 'en':
+                return reverse('coloring_pages:detail_en',
+                               kwargs={'seo_url': page.seo_url_en},
+                               current_app='coloring_pages')
+            return reverse('coloring_pages:detail_de',
+                           kwargs={'seo_url': page.seo_url_de},
+                           current_app='coloring_pages')
 
     def get_urls(self, page=1, site=None, protocol=None, domain=None):
-        # Override to include hreflang links for each URL
         urls = []
         protocol = protocol or 'http'
-        
-        # Get domain from request if available
         request = getattr(self, '_request', None)
         if request is not None:
             domain = request.get_host()
             protocol = 'https' if request.is_secure() else 'http'
-        
-        # Fallback to site framework if no request
         if domain is None:
             try:
                 if site is None:
                     site = get_current_site(None)
                 domain = site.domain
-            except:
-                domain = 'localhost:8000'  # Final fallback
-        
-        # Clean up the domain
+            except Exception:
+                domain = 'localhost:8000'
         clean_domain = domain.replace('http://', '').replace('https://', '').rstrip('/')
-        
+
         for item in self.paginator.page(page).object_list:
-            # Get the canonical URL (English version if available, otherwise German)
-            if item.seo_url_en:
-                path = reverse('coloring_pages:detail_en', 
-                             kwargs={'seo_url': item.seo_url_en}, 
-                             current_app='coloring_pages')
-            elif item.seo_url_de:
-                path = reverse('coloring_pages:detail_de', 
-                             kwargs={'seo_url': item.seo_url_de}, 
-                             current_app='coloring_pages')
-            else:
-                # Fallback to ID-based URL if no SEO URLs are available
-                path = reverse('coloring_pages:page_detail', 
-                             kwargs={'pk': item.pk}, 
-                             current_app='coloring_pages')
-            
-            # Build the full URL
-            if not path.startswith(('http://', 'https://')):
-                loc = f"{protocol}://{clean_domain}{path}"
-            else:
-                loc = path
-                
-            url_info = {
-                'item': item,
-                'location': loc,
-                'lastmod': item.updated_at,
-                'changefreq': self._get('changefreq', item, 'daily'),
-                'priority': self._get('priority', item, 0.9),
-                'alternates': []
-            }
-            
-            # Add alternate language URLs with full URLs and correct language prefixes
-            if item.seo_url_en:  # English version
+            page_obj, lang = item
+            path = self.location(item)
+            loc = f'{protocol}://{clean_domain}{path}'
+
+            alternates = []
+            if page_obj.seo_url_en:
                 with translation.override('en'):
-                    en_path = reverse('coloring_pages:detail_en', 
-                                   kwargs={'seo_url': item.seo_url_en}, 
-                                   current_app='coloring_pages')
-                    if not en_path.startswith(('http://', 'https://')):
-                        en_url = f"{protocol}://{clean_domain}{en_path}"
-                    else:
-                        en_url = en_path
-                    url_info['alternates'].append({
-                        'lang_code': 'en',
-                        'location': en_url
-                    })
-                
-            if item.seo_url_de:  # German version
+                    en_path = reverse('coloring_pages:detail_en',
+                                      kwargs={'seo_url': page_obj.seo_url_en},
+                                      current_app='coloring_pages')
+                alternates.append({
+                    'lang_code': 'en',
+                    'location': f'{protocol}://{clean_domain}{en_path}',
+                })
+            if page_obj.seo_url_de:
                 with translation.override('de'):
-                    de_path = reverse('coloring_pages:detail_de', 
-                                   kwargs={'seo_url': item.seo_url_de}, 
-                                   current_app='coloring_pages')
-                    if not de_path.startswith(('http://', 'https://')):
-                        de_url = f"{protocol}://{clean_domain}{de_path}"
-                    else:
-                        de_url = de_path
-                    url_info['alternates'].append({
-                        'lang_code': 'de',
-                        'location': de_url
-                    })
-            
-            urls.append(url_info)
-        
+                    de_path = reverse('coloring_pages:detail_de',
+                                      kwargs={'seo_url': page_obj.seo_url_de},
+                                      current_app='coloring_pages')
+                alternates.append({
+                    'lang_code': 'de',
+                    'location': f'{protocol}://{clean_domain}{de_path}',
+                })
+            # x-default -> EN if available, else first alternate.
+            default_alt = next((a for a in alternates if a['lang_code'] == 'en'),
+                               alternates[0] if alternates else None)
+            if default_alt:
+                alternates.append({
+                    'lang_code': 'x-default',
+                    'location': default_alt['location'],
+                })
+
+            urls.append({
+                'item': page_obj,
+                'location': loc,
+                'lastmod': page_obj.updated_at,
+                'changefreq': self.changefreq,
+                'priority': self.priority,
+                'alternates': alternates,
+            })
         return urls
 
 
