@@ -30,4 +30,5 @@ def download_image(request, pk):
     
     response = HttpResponse(coloring_page.image.read(), content_type='image/png')
     response['Content-Disposition'] = f'attachment; filename="{filename}.png"'
+    response['X-Robots-Tag'] = 'noindex'
     return response
