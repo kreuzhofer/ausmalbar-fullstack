@@ -35,9 +35,13 @@ if os.getenv('CSRF_TRUSTED_ORIGINS'):
 if os.getenv('SECURE_PROXY_SSL_HEADER'):
     SECURE_PROXY_SSL_HEADER = tuple(os.getenv('SECURE_PROXY_SSL_HEADER').split(','))
 
+# Single source of truth for the domain→language mapping env var.
+# Default mirrors the DOMAIN_LANGUAGE_MAPPING Django setting below so that
+# ALLOWED_HOSTS and CANONICAL_HOSTS are always consistent with it.
+_raw_domain_mapping = os.getenv('DOMAIN_LANGUAGE_MAPPING', 'yourdomain.de:de,yourdomain.com:en')
+
 # Add all domains from DOMAIN_LANGUAGE_MAPPING to ALLOWED_HOSTS
-domain_mapping = os.getenv('DOMAIN_LANGUAGE_MAPPING', '')
-for mapping in domain_mapping.split(','):
+for mapping in _raw_domain_mapping.split(','):
     if ':' in mapping:
         domain = mapping.split(':', 1)[0].strip()
         # Add both domain and www.domain to ALLOWED_HOSTS
@@ -45,6 +49,16 @@ for mapping in domain_mapping.split(','):
             ALLOWED_HOSTS.append(domain)
         if f'www.{domain}' not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(f'www.{domain}')
+
+# Canonical host map: lowercased alias → canonical host.
+# Each apex domain from DOMAIN_LANGUAGE_MAPPING is also listed with its www. variant.
+CANONICAL_HOSTS = {}
+for mapping in _raw_domain_mapping.split(','):
+    if ':' in mapping:
+        apex = mapping.split(':', 1)[0].strip().lower()
+        if apex:
+            CANONICAL_HOSTS[apex] = apex
+            CANONICAL_HOSTS[f'www.{apex}'] = apex
 
 # Thumbnail settings
 THUMBNAIL_SIZE = (256, 256)
@@ -76,6 +90,7 @@ SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'coloring_pages.middleware.canonical_host.CanonicalHostMiddleware',  # 301-redirect www → apex
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise middleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -174,7 +189,7 @@ LANGUAGES = [
 # Domain to language mapping
 # Format: "domain1.com:lang1,domain2.com:lang2"
 # For example: "yourdomain.de:de,yourdomain.com:en"
-DOMAIN_LANGUAGE_MAPPING = os.getenv('DOMAIN_LANGUAGE_MAPPING', 'yourdomain.de:de,yourdomain.com:en')
+DOMAIN_LANGUAGE_MAPPING = _raw_domain_mapping
 
 # Imprint settings
 IMPRINT_NAME = os.getenv('IMPRINT_NAME', 'Your Name or Company')

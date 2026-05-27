@@ -78,6 +78,9 @@ INSTALLED_APPS = [
     'coloring_pages',
 ]
 
+# Canonical host map — empty so CanonicalHostMiddleware is a no-op during tests.
+CANONICAL_HOSTS = {}
+
 # Disable CSRF checks for testing
 CSRF_COOKIE_SECURE = False
 SESSION_COOKIE_SECURE = False
