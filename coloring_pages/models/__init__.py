@@ -11,6 +11,7 @@ from .search import SearchQuery
 from .schedule import GenerationSchedule
 from .trend import TrendQuery
 from .suggestion import Suggestion
+from .slug_history import ColoringPageSlugHistory  # noqa: F401
 
 # This makes the models available when importing from coloring_pages.models
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     'GenerationSchedule',
     'TrendQuery',
     'Suggestion',
+    'ColoringPageSlugHistory',
 ]
