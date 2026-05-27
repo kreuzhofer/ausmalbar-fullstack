@@ -19,15 +19,24 @@ def robots(request):
         "User-agent: *",
         "Allow: /",
         "",
-        "# Disallow admin and sensitive areas",
+        "# Admin and account areas",
         "Disallow: /admin/",
         "Disallow: /media/admin/",
         "Disallow: /static/admin/",
         "Disallow: /accounts/",
         "Disallow: /api/",
         "",
-        "# Sitemap location",
-        f"Sitemap: {sitemap_url}"
+        "# Search result pages produce thin, low-quality pages",
+        "Disallow: /*/search/",
+        "Disallow: /*/suche/",
+        "",
+        "# The download endpoint returns raw image data, not an HTML page",
+        "Disallow: /*/page/*/download/",
+        "",
+        "# Legacy ID-based detail URLs 301 to SEO URLs — no need to crawl",
+        "Disallow: /*/page/*/$",
+        "",
+        f"Sitemap: {sitemap_url}",
     ]
     
     return HttpResponse("\n".join(content), content_type="text/plain")
