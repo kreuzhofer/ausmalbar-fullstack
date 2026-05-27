@@ -1,5 +1,5 @@
 {% extends 'coloring_pages/base.html' %}
-{% load i18n %}
+{% load i18n seo %}
 
 {% block title %}{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %} - {% trans 'detail_page_title_suffix' %}{% endblock %}
 {% block meta_description %}{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de|truncatewords:30 }}{% else %}{{ page.description_en|truncatewords:30 }}{% endif %}{% endblock %}
@@ -181,9 +181,10 @@
         </div>
         
         {% comment %} Related pages section would go here {% endcomment %}
-        
+
     </div>
 </div>
+{% page_jsonld page %}
 {% endblock %}
 
 {% block extra_js %}

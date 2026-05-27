@@ -1,4 +1,6 @@
 import io
+import json
+import re
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -94,3 +96,27 @@ class MetaDescriptionTests(TestCase):
             'content="A simple line-art dog for kids to color."',
             html=False,
         )
+
+
+@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+class JsonLdTests(TestCase):
+    def test_detail_page_emits_jsonld(self):
+        page = ColoringPage.objects.create(
+            title_en='Cute Dog', description_en='A cute dog',
+            title_de='Niedlicher Hund', description_de='Ein Hund',
+            prompt='dog', image=_make_image_file(),
+            status=ColoringPage.STATUS_PUBLISHED,
+        )
+        response = self.client.get(f'/en/coloring-page/{page.seo_url_en}/')
+        # Extract the JSON-LD block
+        match = re.search(
+            r'<script type="application/ld\+json">(.*?)</script>',
+            response.content.decode(),
+            re.DOTALL,
+        )
+        self.assertIsNotNone(match, 'No JSON-LD script tag found')
+        data = json.loads(match.group(1))
+        self.assertEqual(data['@type'], 'ImageObject')
+        self.assertEqual(data['name'], 'Cute Dog')
+        self.assertIn('contentUrl', data)
+        self.assertIn('description', data)
