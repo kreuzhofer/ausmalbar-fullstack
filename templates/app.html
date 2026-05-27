@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-{% load i18n static i18n_switcher %}
+{% load i18n static i18n_switcher seo %}
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% trans "Ausmalbar - Free Coloring Pages for Kids" %}{% endblock %}</title>
     {% if noindex %}<meta name="robots" content="noindex,follow">{% endif %}
+    <link rel="canonical" href="{% canonical_url %}">
+    {% hreflang_alternates %}
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{% static 'favicons/favicon.svg' %}">
