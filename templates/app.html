@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% trans "Ausmalbar - Free Coloring Pages for Kids" %}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{% trans 'app_default_meta_description' %}{% endblock %}">
     {% if noindex %}<meta name="robots" content="noindex,follow">{% endif %}
     <link rel="canonical" href="{% canonical_url %}">
     {% hreflang_alternates %}

@@ -71,3 +71,26 @@ class HreflangAlternatesTests(TestCase):
             f'hreflang="x-default" href="http://testserver/en/coloring-page/{page.seo_url_en}/"',
             body,
         )
+
+
+@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+class MetaDescriptionTests(TestCase):
+    def test_home_page_has_meta_description(self):
+        response = self.client.get('/en/')
+        self.assertContains(response, '<meta name="description" content="', html=False)
+
+    def test_detail_page_uses_page_description(self):
+        page = ColoringPage.objects.create(
+            title_en='Cute Dog',
+            description_en='A simple line-art dog for kids to color.',
+            title_de='Niedlicher Hund',
+            description_de='Ein Hund zum Ausmalen.',
+            prompt='dog', image=_make_image_file(),
+            status=ColoringPage.STATUS_PUBLISHED,
+        )
+        response = self.client.get(f'/en/coloring-page/{page.seo_url_en}/')
+        self.assertContains(
+            response,
+            'content="A simple line-art dog for kids to color."',
+            html=False,
+        )

@@ -411,3 +411,16 @@ msgstr "Our web pages and their contents are subject to German copyright law. Un
 # Preview card
 msgid "preview_card_save"
 msgstr "Download"
+
+# ============================================================================
+# Meta descriptions
+# ============================================================================
+
+msgid "app_default_meta_description"
+msgstr "Free printable coloring pages for kids — animals, vehicles, holidays, and more."
+
+msgid "home_meta_description"
+msgstr "Browse hundreds of free printable coloring pages for kids. AI-generated, ready to download and print."
+
+msgid "search_meta_description"
+msgstr "Search our collection of free coloring pages for kids."

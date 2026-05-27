@@ -2,6 +2,7 @@
 {% load i18n %}
 
 {% block title %}{% if query %}{{ query|title }} - {% endif %}{% trans 'search_page_title' %}{% endblock %}
+{% block meta_description %}{% if query %}{% blocktrans with query=query %}Coloring pages matching "{{ query }}"{% endblocktrans %}{% else %}{% trans 'search_meta_description' %}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>

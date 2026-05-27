@@ -2,6 +2,7 @@
 {% load i18n %}
 
 {% block title %}{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %} - {% trans 'detail_page_title_suffix' %}{% endblock %}
+{% block meta_description %}{% if request.LANGUAGE_CODE == 'de' and page.description_de %}{{ page.description_de|truncatewords:30 }}{% else %}{{ page.description_en|truncatewords:30 }}{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>

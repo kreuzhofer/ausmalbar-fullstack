@@ -472,3 +472,16 @@ msgstr "Unsere Webseiten und deren Inhalte unterliegen dem deutschen Urheberrech
 # Preview card
 msgid "preview_card_save"
 msgstr "Herunterladen"
+
+# ============================================================================
+# Meta descriptions
+# ============================================================================
+
+msgid "app_default_meta_description"
+msgstr "Kostenlose Ausmalbilder für Kinder zum Ausdrucken — Tiere, Fahrzeuge, Feiertage und mehr."
+
+msgid "home_meta_description"
+msgstr "Hunderte kostenlose Ausmalbilder für Kinder. KI-generiert, sofort herunterladen und drucken."
+
+msgid "search_meta_description"
+msgstr "Durchsuche unsere Sammlung kostenloser Ausmalbilder für Kinder."
