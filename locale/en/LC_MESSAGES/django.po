@@ -424,3 +424,10 @@ msgstr "Browse hundreds of free printable coloring pages for kids. AI-generated,
 
 msgid "search_meta_description"
 msgstr "Search our collection of free coloring pages for kids."
+
+# ============================================================================
+# Detail page — related pages
+# ============================================================================
+
+msgid "detail_related_pages_heading"
+msgstr "Related coloring pages"

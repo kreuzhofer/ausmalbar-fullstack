@@ -141,3 +141,32 @@ class AltTextTests(TestCase):
     def test_en_detail_uses_en_alt(self):
         response = self.client.get(f'/en/coloring-page/{self.page.seo_url_en}/')
         self.assertContains(response, 'alt="Cute Dog"', html=False)
+
+
+@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+class RelatedPagesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.main = ColoringPage.objects.create(
+            title_en='Cute Dog', description_en='d',
+            title_de='Niedlicher Hund', description_de='d',
+            prompt='p', image=_make_image_file(),
+            status=ColoringPage.STATUS_PUBLISHED,
+        )
+        for i in range(4):
+            ColoringPage.objects.create(
+                title_en=f'Page {i}', description_en='d',
+                title_de=f'Seite {i}', description_de='d',
+                prompt='p', image=_make_image_file(),
+                status=ColoringPage.STATUS_PUBLISHED,
+            )
+
+    def test_related_pages_rendered_server_side(self):
+        response = self.client.get(f'/en/coloring-page/{self.main.seo_url_en}/')
+        body = response.content.decode()
+        # Section heading present
+        self.assertIn('Related coloring pages', body)
+        # Each of the 4 related page titles appears server-side (not via JS)
+        for i in range(4):
+            self.assertIn(f'Page {i}', body,
+                          f'Related page "Page {i}" not rendered server-side')

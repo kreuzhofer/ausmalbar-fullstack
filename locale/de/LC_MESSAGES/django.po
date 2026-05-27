@@ -485,3 +485,10 @@ msgstr "Hunderte kostenlose Ausmalbilder für Kinder. KI-generiert, sofort herun
 
 msgid "search_meta_description"
 msgstr "Durchsuche unsere Sammlung kostenloser Ausmalbilder für Kinder."
+
+# ============================================================================
+# Detail page — related pages
+# ============================================================================
+
+msgid "detail_related_pages_heading"
+msgstr "Verwandte Ausmalbilder"

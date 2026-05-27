@@ -180,7 +180,16 @@
             </div>
         </div>
         
-        {% comment %} Related pages section would go here {% endcomment %}
+        {% if related_pages %}
+        <section class="related-pages">
+            <h2 class="mb-4">{% trans 'detail_related_pages_heading' %}</h2>
+            <div class="row row-cols-2 row-cols-md-3 g-3">
+                {% for page in related_pages %}
+                    {% include 'coloring_pages/includes/coloring_page_card.html' %}
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
 
     </div>
 </div>

@@ -50,6 +50,12 @@ class ColoringPageDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_year'] = timezone.now().year
+        context['related_pages'] = list(
+            ColoringPage.objects
+            .filter(status=ColoringPage.STATUS_PUBLISHED)
+            .exclude(pk=self.object.pk)
+            .order_by('-created_at')[:6]
+        )
         return context
 
 
