@@ -120,3 +120,24 @@ class JsonLdTests(TestCase):
         self.assertEqual(data['name'], 'Cute Dog')
         self.assertIn('contentUrl', data)
         self.assertIn('description', data)
+
+
+@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+class AltTextTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.page = ColoringPage.objects.create(
+            title_en='Cute Dog', description_en='d',
+            title_de='Niedlicher Hund', description_de='d',
+            prompt='p', image=_make_image_file(),
+            status=ColoringPage.STATUS_PUBLISHED,
+        )
+
+    def test_de_detail_uses_de_alt(self):
+        response = self.client.get(f'/de/ausmalbild/{self.page.seo_url_de}/')
+        self.assertContains(response, 'alt="Niedlicher Hund"', html=False)
+        self.assertNotContains(response, 'alt="Cute Dog"', html=False)
+
+    def test_en_detail_uses_en_alt(self):
+        response = self.client.get(f'/en/coloring-page/{self.page.seo_url_en}/')
+        self.assertContains(response, 'alt="Cute Dog"', html=False)

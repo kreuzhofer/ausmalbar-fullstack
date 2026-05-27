@@ -4,7 +4,7 @@
     <div class="card w-100 d-flex flex-column" style="min-height: 300px;">
         <a href="{{ page.get_absolute_url }}" class="text-decoration-none d-block" style="height: 200px; overflow: hidden;">
             {% if page.thumbnail %}
-            <img src="{{ page.thumbnail.url }}" class="img-fluid h-100 w-100" style="object-fit: contain;" alt="{{ page.title_en }}">
+            <img src="{{ page.thumbnail.url }}" class="img-fluid h-100 w-100" style="object-fit: contain;" alt="{% if request.LANGUAGE_CODE == 'de' and page.title_de %}{{ page.title_de }}{% else %}{{ page.title_en }}{% endif %}">
             {% else %}
             <div class="bg-light d-flex align-items-center justify-content-center h-100">
                 <i class="fas fa-image fa-4x text-muted"></i>
