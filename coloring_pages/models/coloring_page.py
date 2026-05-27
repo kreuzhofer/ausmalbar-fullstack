@@ -75,10 +75,19 @@ class ColoringPage(TimeStampedModel):
         ordering = ['-created_at']
     
     def save(self, *args, **kwargs):
-        # Generate SEO URLs if they don't exist or if the title has changed
+        # Capture old slugs into history BEFORE overwriting them, so stale URLs
+        # can be 301-redirected.
+        old_en_slug, old_de_slug = None, None
+        if self.pk:
+            changed = self.get_changed_fields()
+            if 'title_en' in changed and self.seo_url_en:
+                old_en_slug = ColoringPage.objects.values_list('seo_url_en', flat=True).get(pk=self.pk)
+            if 'title_de' in changed and self.seo_url_de:
+                old_de_slug = ColoringPage.objects.values_list('seo_url_de', flat=True).get(pk=self.pk)
+
         if not self.seo_url_en or 'title_en' in self.get_changed_fields():
             self.seo_url_en = create_unique_slug(ColoringPage, self.title_en, 'title_en', 'seo_url_en')
-        
+
         if not self.seo_url_de or 'title_de' in self.get_changed_fields():
             self.seo_url_de = create_unique_slug(ColoringPage, self.title_de, 'title_de', 'seo_url_de')
         
@@ -129,7 +138,18 @@ class ColoringPage(TimeStampedModel):
                 print(f"Error generating thumbnail: {str(e)}")
         
         super().save(*args, **kwargs)
-    
+
+        # Record any slug rotations now that the new slug is committed.
+        from .slug_history import ColoringPageSlugHistory
+        if old_en_slug and old_en_slug != self.seo_url_en:
+            ColoringPageSlugHistory.objects.get_or_create(
+                language='en', slug=old_en_slug, defaults={'page': self},
+            )
+        if old_de_slug and old_de_slug != self.seo_url_de:
+            ColoringPageSlugHistory.objects.get_or_create(
+                language='de', slug=old_de_slug, defaults={'page': self},
+            )
+
     def get_changed_fields(self):
         """Helper method to get changed fields"""
         if not self.pk:
