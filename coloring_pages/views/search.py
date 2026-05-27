@@ -87,6 +87,7 @@ def search(request):
         'page_obj': page_obj,
         'popular_searches': popular_searches,
         'is_search': bool(query),
+        'noindex': True,
     }
 
     # Store current search in session for back navigation
@@ -101,4 +102,6 @@ def search(request):
             'language': get_language() or 'en'
         }
 
-    return render(request, 'coloring_pages/search.html', context)
+    response = render(request, 'coloring_pages/search.html', context)
+    response['X-Robots-Tag'] = 'noindex, follow'
+    return response
