@@ -74,7 +74,7 @@ Top-level helpers inside `coloring_pages/` worth knowing about:
 - `demand.py` — demand-tracking / dashboard support (paired with `views/admin/demand.py`)
 - `trends.py` — trend computation backing the `Trend` model
 - `storage_backends.py` — S3 storage backend, activated when AWS env vars are set
-- `sitemaps.py` + `generate_sitemap` command — sitemap generation
+- `sitemaps.py` — dynamic sitemap served at `/sitemap.xml`
 - `templatetags/` — custom template tags used in templates
 
 ### Models (`coloring_pages/models/` is a package)
@@ -103,7 +103,7 @@ SEO URLs serve both languages: `/coloring-page/<slug>/` (EN) and `/ausmalbild/<s
 
 - `wait_for_db` — Blocks until PostgreSQL is ready (used in container startup)
 - `makemessages_all` — Extract translation strings for all languages
-- `generate_sitemap`, `load_sample_data`, `check_health`, `initdb`
+- `load_sample_data`, `check_health`, `initdb`
 - `embed_pages` — Compute / refresh embeddings for existing coloring pages
 - `generate_daily` — Daily AI generation job (intended to run via the scheduler)
 - `run_scheduler` — Long-running scheduler that dispatches jobs defined by `Schedule` records
