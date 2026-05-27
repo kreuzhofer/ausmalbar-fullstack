@@ -187,6 +187,19 @@ class ColoringPageSitemap(Sitemap):
                     'location': default_alt['location'],
                 })
 
+            # Image sitemap fields — language-appropriate title/caption.
+            if lang == 'de' and page_obj.title_de:
+                image_title = page_obj.title_de
+                image_caption = page_obj.description_de or page_obj.description_en or ''
+            else:
+                image_title = page_obj.title_en
+                image_caption = page_obj.description_en or ''
+            image_loc = (
+                f'{protocol}://{clean_domain}{page_obj.image.url}'
+                if page_obj.image and not page_obj.image.url.startswith(('http://', 'https://'))
+                else (page_obj.image.url if page_obj.image else '')
+            )
+
             urls.append({
                 'item': page_obj,
                 'location': loc,
@@ -194,6 +207,9 @@ class ColoringPageSitemap(Sitemap):
                 'changefreq': self.changefreq,
                 'priority': self.priority,
                 'alternates': alternates,
+                'image_loc': image_loc,
+                'image_title': image_title,
+                'image_caption': image_caption,
             })
         return urls
 
