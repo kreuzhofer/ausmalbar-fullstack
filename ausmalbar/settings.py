@@ -35,6 +35,13 @@ if os.getenv('CSRF_TRUSTED_ORIGINS'):
 if os.getenv('SECURE_PROXY_SSL_HEADER'):
     SECURE_PROXY_SSL_HEADER = tuple(os.getenv('SECURE_PROXY_SSL_HEADER').split(','))
 
+# HTTPS enforcement — off by default so HTTP docker-compose dev still works.
+# Enable in production by setting env vars behind a TLS-terminating reverse proxy.
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False') == 'True'
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False') == 'True'
+
 # Single source of truth for the domain→language mapping env var.
 # Default mirrors the DOMAIN_LANGUAGE_MAPPING Django setting below so that
 # ALLOWED_HOSTS and CANONICAL_HOSTS are always consistent with it.
