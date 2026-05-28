@@ -156,8 +156,15 @@ class ColoringPage(TimeStampedModel):
             return []
         model = self.__class__
         old = model.objects.get(pk=self.pk)
-        return [field.name for field in model._meta.fields 
-                if getattr(self, field.name) != getattr(old, field.name)]
+        # Skip fields like the vector embedding where equality returns an array
+        skip_fields = {'embedding'}
+        changed = []
+        for field in model._meta.fields:
+            if field.name in skip_fields:
+                continue
+            if getattr(self, field.name) != getattr(old, field.name):
+                changed.append(field.name)
+        return changed
 
     def __str__(self):
         return self.title_en
